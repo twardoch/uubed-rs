@@ -1,0 +1,14 @@
+/Users/adam/Developer/vcs/github.twardoch/pub/uubed/target/debug/deps/libpyo3_build_config-a4531667f3dbd9bf.rmeta: /Users/adam/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.22.6/src/lib.rs /Users/adam/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.22.6/src/errors.rs /Users/adam/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.22.6/src/impl_.rs /Users/adam/Developer/vcs/github.twardoch/pub/uubed/target/debug/build/pyo3-build-config-ec3cdc8f735ee660/out/pyo3-build-config-file.txt /Users/adam/Developer/vcs/github.twardoch/pub/uubed/target/debug/build/pyo3-build-config-ec3cdc8f735ee660/out/pyo3-build-config.txt
+
+/Users/adam/Developer/vcs/github.twardoch/pub/uubed/target/debug/deps/libpyo3_build_config-a4531667f3dbd9bf.rlib: /Users/adam/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.22.6/src/lib.rs /Users/adam/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.22.6/src/errors.rs /Users/adam/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.22.6/src/impl_.rs /Users/adam/Developer/vcs/github.twardoch/pub/uubed/target/debug/build/pyo3-build-config-ec3cdc8f735ee660/out/pyo3-build-config-file.txt /Users/adam/Developer/vcs/github.twardoch/pub/uubed/target/debug/build/pyo3-build-config-ec3cdc8f735ee660/out/pyo3-build-config.txt
+
+/Users/adam/Developer/vcs/github.twardoch/pub/uubed/target/debug/deps/pyo3_build_config-a4531667f3dbd9bf.d: /Users/adam/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.22.6/src/lib.rs /Users/adam/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.22.6/src/errors.rs /Users/adam/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.22.6/src/impl_.rs /Users/adam/Developer/vcs/github.twardoch/pub/uubed/target/debug/build/pyo3-build-config-ec3cdc8f735ee660/out/pyo3-build-config-file.txt /Users/adam/Developer/vcs/github.twardoch/pub/uubed/target/debug/build/pyo3-build-config-ec3cdc8f735ee660/out/pyo3-build-config.txt
+
+/Users/adam/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.22.6/src/lib.rs:
+/Users/adam/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.22.6/src/errors.rs:
+/Users/adam/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/pyo3-build-config-0.22.6/src/impl_.rs:
+/Users/adam/Developer/vcs/github.twardoch/pub/uubed/target/debug/build/pyo3-build-config-ec3cdc8f735ee660/out/pyo3-build-config-file.txt:
+/Users/adam/Developer/vcs/github.twardoch/pub/uubed/target/debug/build/pyo3-build-config-ec3cdc8f735ee660/out/pyo3-build-config.txt:
+
+# env-dep:CARGO_PKG_VERSION=0.22.6
+# env-dep:OUT_DIR=/Users/adam/Developer/vcs/github.twardoch/pub/uubed/target/debug/build/pyo3-build-config-ec3cdc8f735ee660/out

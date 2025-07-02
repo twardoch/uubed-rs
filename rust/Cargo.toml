@@ -1,0 +1,41 @@
+[package]
+name = "uubed-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "uubed_native"
+crate-type = ["cdylib"]  # Required for Python extensions
+
+[dependencies]
+# Core dependencies
+pyo3 = { version = "0.22", features = ["extension-module"] }
+rayon = "1.10"        # Parallel processing
+once_cell = "1.20"    # Lazy static initialization
+
+# For SimHash random projections
+rand = "0.8"
+rand_chacha = "0.3"   # Cryptographically secure RNG
+rand_distr = "0.4"    # Normal distribution
+
+# Performance optimizations
+bytemuck = { version = "1.19", optional = true }
+
+[features]
+default = []
+simd = ["bytemuck"]   # Enable SIMD optimizations
+
+[profile.release]
+# Optimize for speed
+lto = true            # Link-time optimization
+codegen-units = 1     # Single compilation unit for better optimization
+opt-level = 3         # Maximum optimization
+strip = true          # Remove debug symbols for smaller binaries
+
+# Profile for development with some optimizations
+[profile.dev-opt]
+inherits = "dev"
+opt-level = 2         # Some optimization for bearable performance

@@ -1,0 +1,16 @@
+[workspace]
+members = ["rust"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Adam Twardoch <adam+github@twardoch.com>"]
+license = "MIT"
+repository = "https://github.com/twardoch/uubed"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = true
