@@ -1,31 +1,26 @@
-# Rust build artifacts
-/target/
-**/*.rs.bk
 
-# Python build artifacts
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-*.egg-info/
-dist/
-build/
-*.whl
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Testing
 .coverage
+.DS_Store
+.idea/
 .pytest_cache/
+.vscode/
+*.egg-info/
+*.py[cod]
+*.so
+*.swo
+*.swp
+*.whl
+**/*.rs.bk
+*$py.class
+build/
+dist/
 htmlcov/
-
-# Benchmark results
-/target/criterion/
+target/
+target/debug/
+target/debug/build/
+target/debug/deps/
+target/release/
+target/release/build/
+target/release/deps/
+Thumbs.db

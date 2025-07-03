@@ -1,6 +1,10 @@
-/Users/adam/Developer/vcs/github.twardoch/pub/uubed-project/uubed-rs/target/release/deps/libuubed_native.dylib: rust/src/lib.rs rust/src/encoders/mod.rs rust/src/encoders/q64.rs rust/src/encoders/mq64.rs rust/src/encoders/simhash.rs rust/src/encoders/topk.rs rust/src/encoders/topk_optimized.rs rust/src/encoders/zorder.rs rust/src/error.rs rust/src/simd.rs
+/Users/adam/Developer/vcs/github.twardoch/pub/uubed-project/uubed-rs/target/release/deps/libuubed_native.dylib: rust/src/lib.rs rust/src/encoders/mod.rs rust/src/encoders/q64.rs rust/src/encoders/mq64.rs rust/src/encoders/simhash.rs rust/src/encoders/topk.rs rust/src/encoders/topk_optimized.rs rust/src/encoders/zorder.rs rust/src/error.rs rust/src/simd.rs rust/src/capi.rs
 
-/Users/adam/Developer/vcs/github.twardoch/pub/uubed-project/uubed-rs/target/release/deps/uubed_native.d: rust/src/lib.rs rust/src/encoders/mod.rs rust/src/encoders/q64.rs rust/src/encoders/mq64.rs rust/src/encoders/simhash.rs rust/src/encoders/topk.rs rust/src/encoders/topk_optimized.rs rust/src/encoders/zorder.rs rust/src/error.rs rust/src/simd.rs
+/Users/adam/Developer/vcs/github.twardoch/pub/uubed-project/uubed-rs/target/release/deps/libuubed_native.rlib: rust/src/lib.rs rust/src/encoders/mod.rs rust/src/encoders/q64.rs rust/src/encoders/mq64.rs rust/src/encoders/simhash.rs rust/src/encoders/topk.rs rust/src/encoders/topk_optimized.rs rust/src/encoders/zorder.rs rust/src/error.rs rust/src/simd.rs rust/src/capi.rs
+
+/Users/adam/Developer/vcs/github.twardoch/pub/uubed-project/uubed-rs/target/release/deps/libuubed_native.a: rust/src/lib.rs rust/src/encoders/mod.rs rust/src/encoders/q64.rs rust/src/encoders/mq64.rs rust/src/encoders/simhash.rs rust/src/encoders/topk.rs rust/src/encoders/topk_optimized.rs rust/src/encoders/zorder.rs rust/src/error.rs rust/src/simd.rs rust/src/capi.rs
+
+/Users/adam/Developer/vcs/github.twardoch/pub/uubed-project/uubed-rs/target/release/deps/uubed_native.d: rust/src/lib.rs rust/src/encoders/mod.rs rust/src/encoders/q64.rs rust/src/encoders/mq64.rs rust/src/encoders/simhash.rs rust/src/encoders/topk.rs rust/src/encoders/topk_optimized.rs rust/src/encoders/zorder.rs rust/src/error.rs rust/src/simd.rs rust/src/capi.rs
 
 rust/src/lib.rs:
 rust/src/encoders/mod.rs:
@@ -12,3 +16,6 @@ rust/src/encoders/topk_optimized.rs:
 rust/src/encoders/zorder.rs:
 rust/src/error.rs:
 rust/src/simd.rs:
+rust/src/capi.rs:
+
+# env-dep:CARGO_PKG_VERSION=0.1.0
