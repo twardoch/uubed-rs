@@ -132,26 +132,23 @@ pub mod q64_simd {
             let hi_nibbles = _mm256_and_si256(_mm256_srli_epi16(input, 4), lo_mask);
             let lo_nibbles = _mm256_and_si256(input, lo_mask);
             
-            // Process in batches of 4 bytes at a time to efficiently use alphabet rotation
+            // Process nibbles efficiently
             let base_pos = chunk_idx * 32; // 16 bytes * 2 chars per byte
             
-            // Extract nibbles in groups of 4 for alphabet efficiency
-            for group in 0..4 {
-                let group_start = group * 4;
-                let group_pos = base_pos + group_start * 2;
+            // Convert to array for extraction (SIMD intrinsics require constant indices)
+            let hi_array: [u8; 32] = std::mem::transmute(hi_nibbles);
+            let lo_array: [u8; 32] = std::mem::transmute(lo_nibbles);
+            
+            // Process nibbles in pairs for alphabet efficiency
+            for i in 0..16 {
+                let hi = hi_array[i];
+                let lo = lo_array[i];
                 
-                // Extract 4 hi and 4 lo nibbles
-                for i in 0..4 {
-                    let byte_idx = group_start + i;
-                    let hi = _mm256_extract_epi8(hi_nibbles, byte_idx) as u8;
-                    let lo = _mm256_extract_epi8(lo_nibbles, byte_idx) as u8;
-                    
-                    let alphabet_idx_hi = (group_pos + i * 2) & 3;
-                    let alphabet_idx_lo = (group_pos + i * 2 + 1) & 3;
-                    
-                    output.push(alphabets[alphabet_idx_hi][hi as usize] as char);
-                    output.push(alphabets[alphabet_idx_lo][lo as usize] as char);
-                }
+                let alphabet_idx_hi = (base_pos + i * 2) & 3;
+                let alphabet_idx_lo = (base_pos + i * 2 + 1) & 3;
+                
+                output.push(alphabets[alphabet_idx_hi][hi as usize] as char);
+                output.push(alphabets[alphabet_idx_lo][lo as usize] as char);
             }
         }
         
@@ -356,9 +353,6 @@ pub mod topk_simd {
         let chunks = data.chunks_exact(32);
         let remainder = chunks.remainder();
         
-        let mut global_max_vec = _mm256_setzero_si256();
-        let mut global_idx_vec = _mm256_setzero_si256();
-        
         for (chunk_idx, chunk) in chunks.enumerate() {
             let chunk_data = _mm256_loadu_si256(chunk.as_ptr() as *const __m256i);
             
@@ -424,8 +418,63 @@ pub mod topk_simd {
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "sse2")]
     unsafe fn find_single_max_sse2(data: &[u8]) -> usize {
-        // For now, fall back to scalar implementation to ensure correctness
-        find_max_indices_scalar(data, 1)[0]
+        #[cfg(target_arch = "x86_64")]
+        #[allow(unused_imports)]
+        use std::arch::x86_64::*;
+        
+        if data.len() < 16 {
+            return find_max_indices_scalar(data, 1)[0];
+        }
+        
+        let mut max_val = 0u8;
+        let mut max_idx = 0usize;
+        
+        // Process 16 bytes at a time
+        let chunks = data.chunks_exact(16);
+        let remainder = chunks.remainder();
+        
+        for (chunk_idx, chunk) in chunks.enumerate() {
+            let chunk_data = _mm_loadu_si128(chunk.as_ptr() as *const __m128i);
+            
+            // Find max within this chunk using horizontal reduction
+            let chunk_max = find_max_in_vector_sse2(chunk_data);
+            
+            if chunk_max > max_val {
+                max_val = chunk_max;
+                // Find first occurrence of max value in this chunk
+                let comparison = _mm_cmpeq_epi8(chunk_data, _mm_set1_epi8(chunk_max as i8));
+                let mask = _mm_movemask_epi8(comparison);
+                if mask != 0 {
+                    let first_bit = mask.trailing_zeros() as usize;
+                    max_idx = chunk_idx * 16 + first_bit;
+                }
+            }
+        }
+        
+        // Process remainder
+        for (i, &val) in remainder.iter().enumerate() {
+            if val > max_val {
+                max_val = val;
+                max_idx = data.len() - remainder.len() + i;
+            }
+        }
+        
+        max_idx
+    }
+    
+    /// Find maximum value in a 128-bit vector using SSE2
+    #[cfg(target_arch = "x86_64")]
+    #[target_feature(enable = "sse2")]
+    unsafe fn find_max_in_vector_sse2(vec: std::arch::x86_64::__m128i) -> u8 {
+        use std::arch::x86_64::*;
+        
+        // Horizontal maximum reduction for unsigned bytes
+        let max_64 = _mm_max_epu8(vec, _mm_srli_si128(vec, 8));
+        let max_32 = _mm_max_epu8(max_64, _mm_srli_si128(max_64, 4));
+        let max_16 = _mm_max_epu8(max_32, _mm_srli_si128(max_32, 2));
+        let max_8 = _mm_max_epu8(max_16, _mm_srli_si128(max_16, 1));
+        
+        _mm_extract_epi16(max_8, 0) as u8 & 0xFF
     }
     
     /// NEON implementation for finding max indices

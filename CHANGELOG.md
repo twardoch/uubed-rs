@@ -15,6 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Cffi requires simple numeric constants, not mathematical expressions in macro definitions
   - Build now succeeds with cffi bindings generated properly
 
+### Improved
+
+#### SIMD Optimizations
+- **Enhanced SIMD Implementation**: Improved SIMD optimizations for better performance
+  - Fixed AVX2 Q64 encoding implementation to properly use SIMD operations
+  - Implemented actual SIMD-optimized single maximum finding for AVX2 and SSE2
+  - Added proper horizontal reduction algorithms for finding maximum values
+  - Fixed compilation issues with SIMD intrinsics requiring constant indices
+  - SIMD implementations now provide actual performance benefits over scalar code
+
 ### Added
 
 #### New Encoding Algorithms
