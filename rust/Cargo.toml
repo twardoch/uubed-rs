@@ -34,11 +34,6 @@ capi = []               # Enable C API compilation
 
 # Profile configuration is inherited from workspace
 
-# Profile for development with some optimizations
-[profile.dev-opt]
-inherits = "dev"
-opt-level = 2         # Some optimization for bearable performance
-
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
 rand = "0.8"

@@ -119,6 +119,7 @@ fn q64_encode_to_buffer_unchecked(data: &[u8], output: &mut [u8]) {
 }
 
 /// Scalar implementation of Q64 encoding
+#[cfg(not(all(target_arch = "x86_64", feature = "simd")))]
 fn q64_encode_scalar(data: &[u8], output: &mut String) {
     for (byte_idx, &byte) in data.iter().enumerate() {
         let hi_nibble = (byte >> 4) & 0xF;
