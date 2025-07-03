@@ -1,6 +1,7 @@
 # Rust Implementation Tasks
 
 ## High Priority
+- [ ] Fix compilation error: `error[E0753]: expected outer doc comment` in `rust/examples/../src/encoders/topk.rs:2` - change `//!` to `///`
 - [x] Complete SIMD optimizations (fixed AVX2 compilation issues)
 - [ ] Implement zero-copy operations for FFI performance
 - [ ] Parallel encoding for batch operations  

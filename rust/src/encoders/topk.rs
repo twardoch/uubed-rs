@@ -1,5 +1,5 @@
 // this_file: rust/src/encoders/topk.rs
-//! Top-k indices encoder for sparse representation.
+/// Top-k indices encoder for sparse representation.
 
 use rayon::prelude::*;
 
