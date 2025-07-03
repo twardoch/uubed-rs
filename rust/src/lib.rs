@@ -4,6 +4,7 @@
 pub mod encoders;
 pub mod error;
 pub mod simd;
+pub mod parallel;
 
 // Python bindings are optional and only compiled when PyO3 is available
 #[cfg(feature = "python")]

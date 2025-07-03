@@ -7,7 +7,7 @@
   - [x] `test_edge_cases`: Fixed assertion failure - updated expected value from 16 to 20 (10 indices → 20 Q64 chars)
   - [x] `test_performance_characteristics`: Increased timeout for debug mode performance (3s → 5s for 10K elements)
 - [x] Implement zero-copy operations for FFI performance (COMPLETED - added buffer functions for all encoders)
-- [ ] Parallel encoding for batch operations  
+- [x] Parallel encoding for batch operations (COMPLETED - added parallel module with work-stealing)  
 - [ ] PyO3 binding optimization (numpy integration, async support)
 
 ## Medium Priority

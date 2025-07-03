@@ -364,6 +364,184 @@ fn mq64_decode_native(encoded: &str) -> PyResult<Vec<u8>> {
         .map_err(|e| PyValueError::new_err(e.to_string()))
 }
 
+/// Zero-copy SimHash encoding with Q64 into pre-allocated buffer
+#[pyfunction]
+#[pyo3(signature = (input_data, planes, output_buffer))]
+fn simhash_to_buffer_native(
+    py: Python<'_>,
+    input_data: PyBuffer<u8>,
+    planes: usize,
+    output_buffer: PyBuffer<u8>
+) -> PyResult<usize> {
+    // Get read-only view of input data
+    let input_slice = match input_data.as_slice(py) {
+        Some(slice) => {
+            unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const u8, slice.len()) }
+        },
+        None => return Err(PyValueError::new_err("Failed to access input buffer")),
+    };
+    
+    // Get mutable view of output buffer  
+    let output_slice = match output_buffer.as_mut_slice(py) {
+        Some(slice) => slice,
+        None => return Err(PyValueError::new_err("Failed to access output buffer as mutable")),
+    };
+    
+    // Encode directly to output buffer
+    crate::encoders::simhash_to_buffer(input_slice, planes, output_slice)
+        .map_err(|e| PyValueError::new_err(e.to_string()))
+}
+
+/// Zero-copy Top-K encoding with Q64 into pre-allocated buffer
+#[pyfunction]
+#[pyo3(signature = (input_data, k, output_buffer))]
+fn top_k_to_buffer_native(
+    py: Python<'_>,
+    input_data: PyBuffer<u8>,
+    k: usize,
+    output_buffer: PyBuffer<u8>
+) -> PyResult<usize> {
+    // Get read-only view of input data
+    let input_slice = match input_data.as_slice(py) {
+        Some(slice) => {
+            unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const u8, slice.len()) }
+        },
+        None => return Err(PyValueError::new_err("Failed to access input buffer")),
+    };
+    
+    // Get mutable view of output buffer  
+    let output_slice = match output_buffer.as_mut_slice(py) {
+        Some(slice) => slice,
+        None => return Err(PyValueError::new_err("Failed to access output buffer as mutable")),
+    };
+    
+    // Encode directly to output buffer
+    crate::encoders::top_k_to_buffer(input_slice, k, output_slice)
+        .map_err(|e| PyValueError::new_err(e.to_string()))
+}
+
+/// Zero-copy Z-order encoding with Q64 into pre-allocated buffer
+#[pyfunction]
+#[pyo3(signature = (input_data, output_buffer))]
+fn z_order_to_buffer_native(
+    py: Python<'_>,
+    input_data: PyBuffer<u8>,
+    output_buffer: PyBuffer<u8>
+) -> PyResult<usize> {
+    // Get read-only view of input data
+    let input_slice = match input_data.as_slice(py) {
+        Some(slice) => {
+            unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const u8, slice.len()) }
+        },
+        None => return Err(PyValueError::new_err("Failed to access input buffer")),
+    };
+    
+    // Get mutable view of output buffer  
+    let output_slice = match output_buffer.as_mut_slice(py) {
+        Some(slice) => slice,
+        None => return Err(PyValueError::new_err("Failed to access output buffer as mutable")),
+    };
+    
+    // Encode directly to output buffer
+    crate::encoders::z_order_to_buffer(input_slice, output_slice)
+        .map_err(|e| PyValueError::new_err(e.to_string()))
+}
+
+/// Parallel Q64 encoding for multiple embeddings
+#[pyfunction]
+#[pyo3(signature = (embeddings, num_threads=None))]
+fn parallel_q64_encode_native(
+    py: Python<'_>,
+    embeddings: Vec<PyBuffer<u8>>,
+    num_threads: Option<usize>
+) -> PyResult<Vec<String>> {
+    // Convert PyBuffers to byte slices
+    let mut embedding_data = Vec::new();
+    let mut embedding_refs = Vec::new();
+    
+    for buffer in embeddings {
+        match buffer.as_slice(py) {
+            Some(slice) => {
+                let bytes = unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const u8, slice.len()) };
+                embedding_data.push(bytes.to_vec());
+            },
+            None => return Err(PyValueError::new_err("Failed to access embedding buffer")),
+        }
+    }
+    
+    // Create references
+    for data in &embedding_data {
+        embedding_refs.push(data.as_slice());
+    }
+    
+    // Encode in parallel
+    Ok(crate::parallel::parallel_q64_encode(&embedding_refs, num_threads))
+}
+
+/// Parallel SimHash encoding for multiple embeddings
+#[pyfunction]
+#[pyo3(signature = (embeddings, planes, num_threads=None))]
+fn parallel_simhash_encode_native(
+    py: Python<'_>,
+    embeddings: Vec<PyBuffer<u8>>,
+    planes: usize,
+    num_threads: Option<usize>
+) -> PyResult<Vec<String>> {
+    // Convert PyBuffers to byte slices
+    let mut embedding_data = Vec::new();
+    let mut embedding_refs = Vec::new();
+    
+    for buffer in embeddings {
+        match buffer.as_slice(py) {
+            Some(slice) => {
+                let bytes = unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const u8, slice.len()) };
+                embedding_data.push(bytes.to_vec());
+            },
+            None => return Err(PyValueError::new_err("Failed to access embedding buffer")),
+        }
+    }
+    
+    // Create references
+    for data in &embedding_data {
+        embedding_refs.push(data.as_slice());
+    }
+    
+    // Encode in parallel
+    Ok(crate::parallel::parallel_simhash_encode(&embedding_refs, planes, num_threads))
+}
+
+/// Parallel Top-K encoding for multiple embeddings
+#[pyfunction]
+#[pyo3(signature = (embeddings, k, num_threads=None))]
+fn parallel_topk_encode_native(
+    py: Python<'_>,
+    embeddings: Vec<PyBuffer<u8>>,
+    k: usize,
+    num_threads: Option<usize>
+) -> PyResult<Vec<String>> {
+    // Convert PyBuffers to byte slices
+    let mut embedding_data = Vec::new();
+    let mut embedding_refs = Vec::new();
+    
+    for buffer in embeddings {
+        match buffer.as_slice(py) {
+            Some(slice) => {
+                let bytes = unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const u8, slice.len()) };
+                embedding_data.push(bytes.to_vec());
+            },
+            None => return Err(PyValueError::new_err("Failed to access embedding buffer")),
+        }
+    }
+    
+    // Create references
+    for data in &embedding_data {
+        embedding_refs.push(data.as_slice());
+    }
+    
+    // Encode in parallel
+    Ok(crate::parallel::parallel_topk_encode(&embedding_refs, k, num_threads))
+}
+
 /// Python module initialization
 #[pymodule]
 fn uubed_native(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -375,6 +553,16 @@ fn uubed_native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(q64_encode_buffer_native, m)?)?;
     m.add_function(wrap_pyfunction!(q64_encode_batch_native, m)?)?;
     m.add_function(wrap_pyfunction!(q64_encode_inplace_native, m)?)?;
+    
+    // Zero-copy buffer operations
+    m.add_function(wrap_pyfunction!(simhash_to_buffer_native, m)?)?;
+    m.add_function(wrap_pyfunction!(top_k_to_buffer_native, m)?)?;
+    m.add_function(wrap_pyfunction!(z_order_to_buffer_native, m)?)?;
+    
+    // Parallel batch operations
+    m.add_function(wrap_pyfunction!(parallel_q64_encode_native, m)?)?;
+    m.add_function(wrap_pyfunction!(parallel_simhash_encode_native, m)?)?;
+    m.add_function(wrap_pyfunction!(parallel_topk_encode_native, m)?)?;
     
     // Other encoder functions
     m.add_function(wrap_pyfunction!(simhash_q64_native, m)?)?;
