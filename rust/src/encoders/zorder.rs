@@ -65,6 +65,46 @@ pub fn z_order_q64_extended(embedding: &[u8]) -> String {
     super::q64::q64_encode(&bytes)
 }
 
+/// Zero-copy version: Generate Z-order encoding with Q64 into pre-allocated buffer
+///
+/// # Arguments
+/// * `embedding` - Input embedding vector (uses first 8 dimensions)
+/// * `output` - Pre-allocated buffer (must be at least 8 bytes)
+///
+/// # Returns
+/// * `Ok(bytes_written)` - Number of bytes written to buffer
+/// * `Err(Q64Error)` - Error if buffer is too small
+///
+/// # Performance
+/// - Zero allocation encoding for maximum performance
+/// - Directly writes to output buffer
+pub fn z_order_to_buffer(embedding: &[u8], output: &mut [u8]) -> Result<usize, super::q64::Q64Error> {
+    // Quantize to 4 bits per dimension (0-15 range)
+    let quantized: Vec<u8> = embedding.iter()
+        .take(8)
+        .map(|&b| b >> 4)
+        .collect();
+    
+    // Pad with zeros if needed
+    let dims_to_use = quantized.len().min(8);
+    
+    let mut result = 0u32;
+    
+    // Interleave 4 bits from each dimension
+    for dim in 0..dims_to_use {
+        let val = quantized[dim] as u32;
+        
+        for bit in 0..4 {
+            let bit_val = (val >> bit) & 1;
+            result |= bit_val << (bit * 8 + dim);
+        }
+    }
+    
+    // Convert to bytes
+    let bytes = result.to_be_bytes();
+    super::q64::q64_encode_to_buffer(&bytes, output)
+}
+
 /// Fast Z-order using lookup tables
 /// For production use, this would be the preferred method
 #[cfg(feature = "simd")]

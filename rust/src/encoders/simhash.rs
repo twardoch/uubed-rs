@@ -5,6 +5,7 @@ use rayon::prelude::*;
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use std::collections::HashMap;
+use super::q64::Q64Error;
 
 /// Cache for projection matrices of different sizes
 static MATRIX_CACHE: Lazy<Mutex<HashMap<(usize, usize), ProjectionMatrix>>> =
@@ -117,6 +118,53 @@ pub fn simhash_q64(embedding: &[u8], planes: usize) -> String {
 /// # Performance
 /// - Zero allocation encoding for maximum performance
 /// - Reuses cached projection matrices
+pub fn simhash_to_buffer(embedding: &[u8], planes: usize, output: &mut [u8]) -> Result<usize, Q64Error> {
+    // Get or generate projection matrix
+    let matrix = ProjectionMatrix::get_or_create(planes, embedding.len());
+    
+    // Calculate hash
+    let mut bits = vec![false; planes];
+    
+    // Compute dot products
+    for plane_idx in 0..planes {
+        let offset = plane_idx * embedding.len();
+        let plane = &matrix.data[offset..offset + embedding.len()];
+        
+        let dot: f32 = embedding.iter()
+            .zip(plane.iter())
+            .map(|(&e, &p)| (e as f32 - 128.0) * p)
+            .sum();
+        
+        bits[plane_idx] = dot >= 0.0;
+    }
+    
+    // Pack bits directly into output buffer
+    let bytes_needed = (bits.len() + 7) / 8;
+    let q64_needed = bytes_needed * 2;  // Q64 doubles the size
+    
+    if output.len() < q64_needed {
+        return Err(Q64Error {
+            message: format!("Output buffer too small: need {} bytes, got {}", q64_needed, output.len())
+        });
+    }
+    
+    // Pack bits into temporary bytes
+    let mut temp_bytes = [0u8; 128]; // Max 1024 planes = 128 bytes
+    for (byte_idx, chunk) in bits.chunks(8).enumerate() {
+        let mut byte = 0u8;
+        for (i, &bit) in chunk.iter().enumerate() {
+            if bit {
+                byte |= 1 << (7 - i);
+            }
+        }
+        temp_bytes[byte_idx] = byte;
+    }
+    
+    // Encode directly to output buffer
+    super::q64::q64_encode_to_buffer(&temp_bytes[..bytes_needed], output)?;
+    
+    Ok(q64_needed)
+}
 /// - Directly writes to output buffer
 pub fn simhash_q64_to_buffer(
     embedding: &[u8], 

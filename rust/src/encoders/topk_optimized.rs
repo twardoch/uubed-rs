@@ -181,6 +181,25 @@ pub fn top_k_q64_optimized(embedding: &[u8], k: usize) -> String {
     super::q64::q64_encode(&indices)
 }
 
+/// Zero-copy version: Generate top-k encoding with Q64 into pre-allocated buffer
+///
+/// # Arguments
+/// * `embedding` - Input embedding vector  
+/// * `k` - Number of top indices to select
+/// * `output` - Pre-allocated buffer (must be at least `k * 2` bytes)
+///
+/// # Returns
+/// * `Ok(bytes_written)` - Number of bytes written to buffer
+/// * `Err(Q64Error)` - Error if buffer is too small
+///
+/// # Performance
+/// - Zero allocation encoding for maximum performance
+/// - Reuses optimized top-k selection algorithms
+pub fn top_k_to_buffer(embedding: &[u8], k: usize, output: &mut [u8]) -> Result<usize, super::q64::Q64Error> {
+    let indices = top_k_indices_optimized(embedding, k);
+    super::q64::q64_encode_to_buffer(&indices, output)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

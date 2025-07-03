@@ -9,7 +9,7 @@ pub mod zorder;
 
 pub use q64::{q64_encode, q64_decode, q64_encode_to_buffer};
 pub use mq64::{mq64_encode, mq64_encode_with_levels, mq64_decode};
-pub use simhash::simhash_q64;
+pub use simhash::{simhash_q64, simhash_to_buffer};
 pub use topk::top_k_q64;
-pub use topk_optimized::top_k_q64_optimized;
-pub use zorder::z_order_q64;
+pub use topk_optimized::{top_k_q64_optimized, top_k_to_buffer};
+pub use zorder::{z_order_q64, z_order_to_buffer};

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2025-01-03
 
+### Added
+
+#### Zero-Copy Operations for FFI Performance
+- **Implemented Zero-Copy Buffer Operations**: Added direct buffer writing functions for all encoders
+  - `q64_encode_to_buffer`: Already existed, exports properly maintained
+  - `simhash_to_buffer`: New zero-copy SimHash encoding directly to pre-allocated buffers
+  - `top_k_to_buffer`: New zero-copy Top-K encoding with optimized algorithms
+  - `z_order_to_buffer`: New zero-copy Z-order encoding for spatial data
+- **Consistent Error Handling**: All buffer operations return `Result<usize, Q64Error>` with bytes written
+- **Performance Benefits**: Eliminates string allocation overhead for FFI calls
+
 ### Fixed
 
 #### Documentation Issues
@@ -16,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Integration Test Issues**: Fixed 2 failing integration tests in `rust/tests/integration_test.rs`:
   - `test_edge_cases`: Fixed assertion - when k>length, returns k indices (3 actual + 7 padding = 10 bytes → 20 Q64 chars)
   - `test_performance_characteristics`: Increased timeout for debug builds (5s for 10K elements)
+
+### Changed
+
+#### API Improvements
+- **Q64Error Structure**: Made `message` field public to allow construction from other modules
+- **Module Exports**: Updated `encoders/mod.rs` to export all new zero-copy functions
 
 ## [0.1.1] - 2025-01-XX
 

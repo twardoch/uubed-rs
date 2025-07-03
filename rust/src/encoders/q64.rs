@@ -36,7 +36,7 @@ static REV_LOOKUP: [Option<(u8, u8)>; 256] = build_reverse_lookup();
 
 #[derive(Debug, Clone)]
 pub struct Q64Error {
-    message: String,
+    pub message: String,
 }
 
 impl fmt::Display for Q64Error {
