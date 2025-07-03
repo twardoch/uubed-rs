@@ -5,7 +5,19 @@ All notable changes to the uubed-rs project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-01-XX
+## [Unreleased] - 2025-01-03
+
+### Fixed
+
+#### Documentation Issues
+- **Fixed Rust Compilation Error**: Changed inner doc comment (`//!`) to outer doc comment (`///`) in `rust/src/encoders/topk.rs:2` to resolve compilation error E0753
+
+#### Test Failures
+- **Integration Test Issues**: Identified 2 failing integration tests in `rust/tests/integration_test.rs`:
+  - `test_edge_cases`: Assertion failure on line 70 (expected 16, got 20)
+  - `test_performance_characteristics`: Operations taking too long for size 10000
+
+## [0.1.1] - 2025-01-XX
 
 ### Fixed
 

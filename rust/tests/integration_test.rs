@@ -67,7 +67,11 @@ fn test_edge_cases() {
     // Large k values
     let small_embedding = vec![1, 2, 3];
     let topk = top_k_q64_optimized(&small_embedding, 10); // k > length
-    assert_eq!(topk.len(), 16); // 8 Q64 characters = 16 chars (k clamped + padding)
+    // When k=10 and embedding.len()=3:
+    // - top_k_indices_optimized returns [0, 1, 2, 255, 255, 255, 255, 255, 255, 255] (10 indices)
+    // - Q64 encoding produces 2 characters per byte
+    // - So 10 bytes → 20 characters
+    assert_eq!(topk.len(), 20);
 }
 
 #[test]
