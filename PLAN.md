@@ -12,16 +12,63 @@ This plan outlines the Rust implementation strategy, focusing on performance opt
 - **Z-order**: ✅ Complete with morton encoding for spatial locality
 
 ### Testing & Quality
-- **Unit Tests**: ✅ 22 tests passing with >95% coverage
-- **Integration Tests**: ✅ End-to-end pipeline validation
+- **Unit Tests**: ✅ 37 tests passing with >95% coverage
+- **Integration Tests**: ✅ 4 tests passing, end-to-end pipeline validation
 - **Python Tests**: ✅ pytest infrastructure with tests/ directory
-- **Property Tests**: ✅ Hundreds of generated test cases
+- **Property Tests**: ⚠️ 10/17 tests passing, 7 timeout issues requiring optimization
 - **Fuzzing**: ✅ Continuous robustness testing
 - **Benchmarks**: ✅ Performance regression detection
 
 ## Detailed Implementation Plan for Remaining Work
 
-### 1. Core Optimizations
+### 1. Test Performance Issues (URGENT)
+
+#### 1.1 Property Test Timeout Optimization 🚨
+**Status**: Critical issue identified
+**Priority**: Critical 
+**Timeline**: 1-2 days
+
+**Issue Details**:
+- 7 out of 17 property tests are timing out after 60 seconds
+- Tests affected: `prop_all_encoders_handle_empty_input`, `prop_all_encoders_handle_single_byte`, `prop_no_encoder_produces_invalid_utf8`, `prop_simhash_deterministic`, `prop_simhash_different_inputs_different_outputs`, `prop_simhash_length_proportional_to_planes`, `prop_topk_optimized_matches_original`
+
+**Optimization Plan**:
+- **Immediate Actions** (Day 1):
+  - Reduce test case generation size for property tests
+  - Add timeout configuration to individual test cases
+  - Identify most expensive operations in failing tests
+  
+- **Performance Fixes** (Day 2):
+  - Optimize SimHash operations that appear in multiple failing tests
+  - Reduce input size ranges for property test generation
+  - Add early termination conditions for expensive operations
+
+**Success Criteria**:
+- All property tests complete within 10 seconds
+- Maintain test coverage while improving performance
+- No test functionality regression
+
+#### 1.2 Code Quality Cleanup 🧹
+**Status**: Multiple warnings identified
+**Priority**: Medium
+**Timeline**: 1 day
+
+**Issue Details**:
+- 5 unused functions generating compiler warnings
+- Functions: `q64_decode`, `validate_char`, `top_k_q64`, `top_k_q64_optimized`, `top_k_to_buffer`
+
+**Cleanup Plan**:
+- **Analysis Phase**:
+  - Determine if functions are needed for public API
+  - Check if functions are used in examples or benchmarks
+  - Identify functions that should be marked with `#[allow(dead_code)]`
+  
+- **Resolution Phase**:
+  - Remove genuinely unused functions
+  - Add `#[allow(dead_code)]` for functions kept for API completeness
+  - Update module exports if needed
+
+### 2. Core Optimizations
 
 #### 1.1 SIMD Intrinsics Completion ✅
 **Status**: Completed

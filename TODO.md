@@ -9,6 +9,8 @@
 - [x] Implement zero-copy operations for FFI performance (COMPLETED - added buffer functions for all encoders)
 - [x] Parallel encoding for batch operations (COMPLETED - added parallel module with work-stealing)  
 - [x] Fix pytest test discovery - pytest cannot find tests directory (COMPLETED - added tests/__init__.py and tests/test_basic.py)
+- [ ] Fix property test timeouts (7 tests exceeding 60s timeout)
+- [ ] Remove or fix unused function warnings
 - [ ] PyO3 binding optimization (numpy integration, async support)
 
 ## Medium Priority

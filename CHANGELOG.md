@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2025-07-03
 
+### Issues Identified
+
+#### Property Test Timeouts
+- **Property Test Performance Issue**: Several property-based tests exceed 60-second timeout
+  - `prop_all_encoders_handle_empty_input`: Timeout during execution
+  - `prop_all_encoders_handle_single_byte`: Timeout during execution  
+  - `prop_no_encoder_produces_invalid_utf8`: Timeout during execution
+  - `prop_simhash_deterministic`: Timeout during execution
+  - `prop_simhash_different_inputs_different_outputs`: Timeout during execution
+  - `prop_simhash_length_proportional_to_planes`: Timeout during execution
+  - `prop_topk_optimized_matches_original`: Timeout during execution
+
+#### Code Quality Warnings
+- **Unused Functions Warning**: Multiple functions marked as never used
+  - `q64_decode` in `rust/src/encoders/q64.rs:197`
+  - `validate_char` in `rust/src/encoders/q64.rs:225`
+  - `top_k_q64` in `rust/src/encoders/topk.rs:94`
+  - `top_k_q64_optimized` in `rust/src/encoders/topk_optimized.rs:179`
+  - `top_k_to_buffer` in `rust/src/encoders/topk_optimized.rs:198`
+
+### Test Results Summary
+- **Unit Tests**: ✅ 37/37 tests passing
+- **Integration Tests**: ✅ 4/4 tests passing  
+- **Property Tests**: ⚠️ 10/17 tests passing, 7 timeouts
+- **Overall Status**: Partial success with performance concerns in property tests
+
 ### Added
 
 #### Test Infrastructure Development
