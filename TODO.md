@@ -8,6 +8,7 @@
   - [x] `test_performance_characteristics`: Increased timeout for debug mode performance (3s → 5s for 10K elements)
 - [x] Implement zero-copy operations for FFI performance (COMPLETED - added buffer functions for all encoders)
 - [x] Parallel encoding for batch operations (COMPLETED - added parallel module with work-stealing)  
+- [x] Fix pytest test discovery - pytest cannot find tests directory (COMPLETED - added tests/__init__.py and tests/test_basic.py)
 - [ ] PyO3 binding optimization (numpy integration, async support)
 
 ## Medium Priority

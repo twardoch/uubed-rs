@@ -1,0 +1,11 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.8, pytest-8.4.1, pluggy-1.6.0 -- /Users/adam/Library/Application Support/hatch/env/virtual/uubed-rs/h73zZpTU/hatch-test.py3.12/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/adam/Developer/vcs/github.twardoch/pub/uubed-project/uubed-rs
+configfile: pyproject.toml
+plugins: xdist-3.8.0, rerunfailures-14.0, mock-3.14.1
+collecting ... ERROR: file or directory not found: tests
+
+collected 0 items
+
+============================ no tests ran in 0.04s =============================

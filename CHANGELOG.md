@@ -5,9 +5,15 @@ All notable changes to the uubed-rs project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-01-03
+## [Unreleased] - 2025-07-03
 
 ### Added
+
+#### Test Infrastructure Development
+- **Python Testing Setup**: Created pytest-based test infrastructure in `tests/` directory
+  - `tests/__init__.py`: Python test package initialization
+  - `tests/test_basic.py`: Basic functionality tests for PyO3 bindings
+  - Addresses pytest discovery issue identified in TODO.md
 
 #### Zero-Copy Operations for FFI Performance
 - **Implemented Zero-Copy Buffer Operations**: Added direct buffer writing functions for all encoders
