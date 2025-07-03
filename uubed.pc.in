@@ -1,0 +1,23 @@
+# pkg-config file for uubed library
+# 
+# To use this library in your C/C++ project:
+#   pkg-config --cflags --libs uubed
+#
+# Example usage in Makefile:
+#   CFLAGS += $(shell pkg-config --cflags uubed)
+#   LDFLAGS += $(shell pkg-config --libs uubed)
+
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: uubed
+Description: High-performance encoding library for embeddings and vectors
+Version: @VERSION@
+URL: https://github.com/twardoch/uubed-project
+Requires:
+Conflicts:
+Libs: -L${libdir} -luubed_native
+Libs.private: -lpthread -ldl -lm
+Cflags: -I${includedir}

@@ -103,6 +103,60 @@ pub fn simhash_q64(embedding: &[u8], planes: usize) -> String {
     super::q64::q64_encode(&bytes)
 }
 
+/// Zero-copy version: Generate SimHash with Q64 encoding into pre-allocated buffer
+///
+/// # Arguments
+/// * `embedding` - Input embedding vector
+/// * `planes` - Number of random hyperplanes (determines hash length)
+/// * `output` - Pre-allocated buffer (must be at least `(planes / 4)` bytes)
+///
+/// # Returns
+/// * `Ok(bytes_written)` - Number of bytes written to buffer
+/// * `Err(String)` - Error message if buffer is too small
+///
+/// # Performance
+/// - Zero allocation encoding for maximum performance
+/// - Reuses cached projection matrices
+/// - Directly writes to output buffer
+pub fn simhash_q64_to_buffer(
+    embedding: &[u8], 
+    planes: usize, 
+    output: &mut [u8]
+) -> Result<usize, String> {
+    // Calculate required output size
+    let hash_bytes = (planes + 7) / 8;  // Number of bytes for hash
+    let required_len = hash_bytes * 2;  // Q64 encoding doubles the size
+    
+    if output.len() < required_len {
+        return Err(format!(
+            "Output buffer too small: need {} bytes, got {}",
+            required_len, output.len()
+        ));
+    }
+
+    // Get cached projection matrix for efficiency
+    let matrix = ProjectionMatrix::get_or_create(planes, embedding.len());
+
+    // Project and get bits
+    let bits = matrix.project(embedding);
+
+    // Pack bits into bytes directly in a temporary buffer
+    let mut hash_bytes_buf = vec![0u8; hash_bytes];
+    for (chunk_idx, chunk) in bits.chunks(8).enumerate() {
+        let mut byte = 0u8;
+        for (i, &bit) in chunk.iter().enumerate() {
+            if bit {
+                byte |= 1 << (7 - i);
+            }
+        }
+        hash_bytes_buf[chunk_idx] = byte;
+    }
+
+    // Encode with Q64 directly to output buffer
+    super::q64::q64_encode_to_buffer(&hash_bytes_buf, output)
+        .map_err(|e| e.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

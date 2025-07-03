@@ -1,0 +1,49 @@
+[package]
+name = "uubed-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1.0", features = ["derive"] }
+
+[dependencies.uubed-native]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "q64_roundtrip"
+path = "fuzz_targets/q64_roundtrip.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "q64_decode"
+path = "fuzz_targets/q64_decode.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "topk_fuzz"
+path = "fuzz_targets/topk_fuzz.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "simhash_fuzz"
+path = "fuzz_targets/simhash_fuzz.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "zorder_fuzz"
+path = "fuzz_targets/zorder_fuzz.rs"
+test = false
+doc = false

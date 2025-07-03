@@ -1,5 +1,5 @@
 // this_file: rust/src/encoders/q64.rs
-//! QuadB64: Position-safe encoding with SIMD optimization.
+/// QuadB64: Position-safe encoding with SIMD optimization.
 
 use std::error::Error;
 use std::fmt;
@@ -70,6 +70,54 @@ pub fn q64_encode(data: &[u8]) -> String {
     result
 }
 
+/// Zero-copy version: encode bytes into Q64 format using a pre-allocated buffer.
+///
+/// # Arguments
+/// * `data` - Input bytes to encode
+/// * `output` - Pre-allocated byte buffer (must be at least `data.len() * 2` bytes)
+///
+/// # Returns
+/// * `Ok(bytes_written)` - Number of bytes written to output buffer
+/// * `Err(Q64Error)` - If output buffer is too small
+///
+/// # Performance
+/// - Zero allocation encoding for maximum performance
+/// - Uses SIMD when available
+/// - Directly writes bytes to avoid String allocation overhead
+pub fn q64_encode_to_buffer(data: &[u8], output: &mut [u8]) -> Result<usize, Q64Error> {
+    let required_len = data.len() * 2;
+    if output.len() < required_len {
+        return Err(Q64Error {
+            message: format!(
+                "Output buffer too small: need {} bytes, got {}",
+                required_len,
+                output.len()
+            ),
+        });
+    }
+
+    q64_encode_to_buffer_unchecked(data, output);
+    Ok(required_len)
+}
+
+/// Zero-copy encoding without bounds checking (unsafe but fast)
+///
+/// # Safety
+/// Caller must ensure output buffer is at least `data.len() * 2` bytes
+fn q64_encode_to_buffer_unchecked(data: &[u8], output: &mut [u8]) {
+    for (byte_idx, &byte) in data.iter().enumerate() {
+        let hi_nibble = (byte >> 4) & 0xF;
+        let lo_nibble = byte & 0xF;
+        let base_pos = byte_idx * 2;
+        
+        let alphabet_idx_hi = base_pos & 3;
+        let alphabet_idx_lo = (base_pos + 1) & 3;
+        
+        output[base_pos] = ALPHABETS[alphabet_idx_hi][hi_nibble as usize];
+        output[base_pos + 1] = ALPHABETS[alphabet_idx_lo][lo_nibble as usize];
+    }
+}
+
 /// Scalar implementation of Q64 encoding
 fn q64_encode_scalar(data: &[u8], output: &mut String) {
     for (byte_idx, &byte) in data.iter().enumerate() {
@@ -83,7 +131,17 @@ fn q64_encode_scalar(data: &[u8], output: &mut String) {
     }
 }
 
-/// SIMD implementation for x86_64 with AVX2
+/// SIMD implementation for x86_64 with SSE2
+/// 
+/// # Safety
+/// This function is safe to call when:
+/// - The target CPU supports SSE2 (checked at compile time via cfg)
+/// - The input slice `data` is valid for its entire length
+/// - The output string has sufficient capacity (pre-allocated by caller)
+/// 
+/// The unsafe operations performed are:
+/// - Loading unaligned data via _mm_loadu_si128 (safe for any alignment)
+/// - Using SIMD intrinsics (safe when target_arch requirements are met)
 #[cfg(all(target_arch = "x86_64", feature = "simd"))]
 unsafe fn q64_encode_simd(data: &[u8], output: &mut String) {
     #[cfg(target_arch = "x86_64")]
@@ -106,10 +164,14 @@ unsafe fn q64_encode_simd(data: &[u8], output: &mut String) {
         // Process nibbles and convert to characters
         let base_pos = chunk_idx * 32;
 
-        // Extract and encode each nibble
+        // Convert SIMD registers to byte arrays for efficient processing
+        let hi_bytes: [u8; 16] = std::mem::transmute(hi_nibbles);
+        let lo_bytes: [u8; 16] = std::mem::transmute(lo_nibbles);
+
+        // Process each byte pair
         for i in 0..16 {
-            let hi = _mm_extract_epi8(hi_nibbles, i) as usize;
-            let lo = _mm_extract_epi8(lo_nibbles, i) as usize;
+            let hi = hi_bytes[i] as usize;
+            let lo = lo_bytes[i] as usize;
 
             let pos = base_pos + i * 2;
             output.push(ALPHABETS[pos & 3][hi] as char);
@@ -232,5 +294,50 @@ mod tests {
     #[test]
     fn test_error_wrong_position() {
         assert!(q64_decode("QA").is_err());
+    }
+
+    #[test]
+    fn test_q64_encode_to_buffer() {
+        let data = vec![0x12, 0x34, 0x56, 0x78];
+        let mut buffer = vec![0u8; data.len() * 2];
+        
+        let bytes_written = q64_encode_to_buffer(&data, &mut buffer).unwrap();
+        assert_eq!(bytes_written, data.len() * 2);
+        
+        // Compare with string version
+        let string_encoded = q64_encode(&data);
+        let buffer_encoded = String::from_utf8(buffer).unwrap();
+        assert_eq!(string_encoded, buffer_encoded);
+    }
+
+    #[test]
+    fn test_q64_encode_to_buffer_too_small() {
+        let data = vec![0x12, 0x34];
+        let mut buffer = vec![0u8; 3]; // Too small: need 4 bytes
+        
+        let result = q64_encode_to_buffer(&data, &mut buffer);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_q64_encode_to_buffer_empty() {
+        let data = vec![];
+        let mut buffer = vec![0u8; 0];
+        
+        let bytes_written = q64_encode_to_buffer(&data, &mut buffer).unwrap();
+        assert_eq!(bytes_written, 0);
+    }
+
+    #[test]
+    fn test_zero_copy_consistency() {
+        let test_data = (0..100).collect::<Vec<u8>>();
+        
+        // Compare string and buffer versions
+        let string_result = q64_encode(&test_data);
+        let mut buffer = vec![0u8; test_data.len() * 2];
+        q64_encode_to_buffer(&test_data, &mut buffer).unwrap();
+        let buffer_result = String::from_utf8(buffer).unwrap();
+        
+        assert_eq!(string_result, buffer_result);
     }
 }

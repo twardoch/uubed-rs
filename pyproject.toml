@@ -1,0 +1,105 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "uubed-rs"
+authors = [
+    {name = "Adam Twardoch", email = "adam+github@twardoch.com"},
+]
+maintainers = [
+    {name = "Adam Twardoch", email = "adam+github@twardoch.com"},
+]
+description = "High-performance Rust core for position-safe embedding encoding (QuadB64 family)"
+readme = "README.md"
+license = {text = "MIT"}
+keywords = ["encoding", "embeddings", "base64", "rust", "performance"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Archiving :: Compression",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "numpy>=1.20.0",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/twardoch/uubed-rs"
+Repository = "https://github.com/twardoch/uubed-rs"
+Documentation = "https://uubed.readthedocs.io/"
+Issues = "https://github.com/twardoch/uubed-rs/issues"
+Changelog = "https://github.com/twardoch/uubed-rs/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-benchmark>=4.0",
+    "numpy>=1.20.0",
+    "maturin>=1.0,<2.0",
+]
+
+[tool.maturin]
+# Path to the directory containing Cargo.toml
+manifest-path = "rust/Cargo.toml"
+# Build release builds by default
+profile = "release"
+# Enable all features by default for distribution
+features = ["simd"]
+# Python source directory (if we had Python sources)
+# python-source = "python"
+# Compatibility tags
+compatibility = "linux"
+# Strip symbols for smaller wheels
+strip = true
+# Build for multiple targets
+# target = ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"]
+
+[tool.maturin.target.x86_64-unknown-linux-gnu]
+# Specific settings for x86_64 Linux builds
+rustflags = ["-C", "target-cpu=x86-64-v2"]
+
+[tool.maturin.target.aarch64-unknown-linux-gnu] 
+# Specific settings for ARM64 Linux builds
+rustflags = ["-C", "target-cpu=generic"]
+
+[tool.maturin.target.x86_64-apple-darwin]
+# Specific settings for macOS x86_64 builds
+rustflags = ["-C", "target-cpu=x86-64-v2"]
+
+[tool.maturin.target.aarch64-apple-darwin]
+# Specific settings for macOS ARM64 builds  
+rustflags = ["-C", "target-cpu=apple-a14"]
+
+[tool.maturin.target.x86_64-pc-windows-msvc]
+# Specific settings for Windows x86_64 builds
+rustflags = ["-C", "target-cpu=x86-64-v2"]
+
+# Testing configuration
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+# Additional tools configuration can be added here as needed
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "YTT", "S", "BLE", "FBT", "B", "A", "C4", "DTZ", "T10", "ISC", "ICN", "G", "PIE", "T20", "PT", "Q", "RSE", "RET", "SIM", "TID", "TCH", "ARG", "PTH", "ERA", "PGH", "PL", "TRY", "NPY", "RUF"]
+ignore = ["E501", "S101", "PLR0913"]
