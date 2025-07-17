@@ -1,4 +1,228 @@
-# this_file: .github/workflows/release.yml
+# Manual Setup Guide for GitHub Actions
+
+Due to GitHub App permissions, the workflow files need to be added manually. Here's how to complete the setup:
+
+## 1. Create GitHub Actions Workflows
+
+You need to manually create these two files in your repository:
+
+### `.github/workflows/ci.yml`
+This file handles continuous integration testing.
+
+### `.github/workflows/release.yml`
+This file handles automated releases when you push git tags.
+
+## 2. Workflow File Contents
+
+### Create `.github/workflows/ci.yml`:
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: [stable, beta]
+        exclude:
+          - os: windows-latest
+            rust: beta
+          - os: macos-latest
+            rust: beta
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: ${{ matrix.rust }}
+        components: rustfmt, clippy
+    
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: rust
+    
+    - name: Install system dependencies (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential jq
+    
+    - name: Install system dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install jq
+    
+    - name: Install system dependencies (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install jq
+        
+    - name: Check formatting
+      run: cd rust && cargo fmt --check
+      
+    - name: Run clippy
+      run: cd rust && cargo clippy --all-features -- -D warnings
+      
+    - name: Run tests
+      run: cd rust && cargo test --release --no-default-features --features capi
+      
+    - name: Run tests with all features
+      run: cd rust && cargo test --release --all-features
+      
+    - name: Build C API demo (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        cd rust && cargo build --release --no-default-features --features capi
+        cd ..
+        make examples
+        
+    - name: Build C API demo (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        cd rust && cargo build --release --no-default-features --features capi
+        cd ..
+        gcc -Iinclude examples/c_api_demo.c -o examples/c_api_demo.exe -Lrust/target/release -luubed_native
+      
+    - name: Test C API demo (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+          LD_LIBRARY_PATH=rust/target/release ./examples/c_api_demo
+        elif [[ "$OSTYPE" == "darwin"* ]]; then
+          DYLD_LIBRARY_PATH=rust/target/release ./examples/c_api_demo
+        fi
+        
+    - name: Test C API demo (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        $env:PATH = "rust/target/release;$env:PATH"
+        ./examples/c_api_demo.exe
+
+  python-test:
+    name: Python Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        exclude:
+          - os: windows-latest
+            python-version: "3.8"
+          - os: windows-latest
+            python-version: "3.9"
+          - os: macos-latest
+            python-version: "3.8"
+          - os: macos-latest
+            python-version: "3.9"
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+    
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: rust
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install maturin pytest numpy
+    
+    - name: Build Python package
+      run: |
+        maturin build --release --features simd
+        pip install --find-links dist --force-reinstall uubed-rs
+    
+    - name: Run Python tests
+      run: |
+        if [ -d "tests" ]; then
+          python -m pytest tests/ -v
+        else
+          echo "No Python tests found"
+        fi
+      shell: bash
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+    
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: rust
+    
+    - name: Install cargo-audit
+      run: cargo install cargo-audit
+    
+    - name: Run security audit
+      run: cd rust && cargo audit
+
+  benchmarks:
+    name: Benchmarks
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+    
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: rust
+    
+    - name: Run benchmarks
+      run: cd rust && cargo bench --no-run
+    
+    - name: Store benchmark results
+      uses: benchmark-action/github-action-benchmark@v1
+      if: github.ref == 'refs/heads/main'
+      with:
+        name: Rust Benchmark
+        tool: 'cargo'
+        output-file-path: rust/target/criterion/report/index.html
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: true
+        comment-on-alert: true
+        alert-threshold: '200%'
+        fail-on-alert: true
+```
+
+### Create `.github/workflows/release.yml`:
+```yaml
 name: Release
 
 on:
@@ -322,3 +546,42 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       shell: bash
+```
+
+## 3. Optional: Configure PyPI Token
+
+If you want automatic PyPI publishing, add a `PYPI_TOKEN` secret to your GitHub repository:
+
+1. Go to your repository settings
+2. Click on "Secrets and variables" → "Actions"
+3. Click "New repository secret"
+4. Name: `PYPI_TOKEN`
+5. Value: Your PyPI API token
+
+## 4. Test the Setup
+
+Once you've added the workflow files:
+
+1. Push them to your repository
+2. The CI workflow will run on pushes to main/develop
+3. The release workflow will run when you push a git tag
+
+## 5. Using the System
+
+All the local scripts are ready to use:
+
+```bash
+# Show current version
+./version-manager.sh current
+
+# Create a new release
+./version-manager.sh release patch
+
+# Run tests locally
+./run-tests.sh
+
+# Build everything
+./build-and-test-and-release.sh --full
+```
+
+The system is fully functional - you just need to manually add the workflow files due to GitHub App permissions.
