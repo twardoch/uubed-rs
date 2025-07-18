@@ -6,6 +6,7 @@ use pyo3::exceptions::PyValueError;
 use pyo3::buffer::PyBuffer;
 use pyo3::types::PyBytes;
 use std::collections::HashMap;
+use std::cell::Cell;
 
 /// Encode bytes using Q64 algorithm
 #[pyfunction]
@@ -383,7 +384,16 @@ fn simhash_to_buffer_native(
     
     // Get mutable view of output buffer  
     let output_slice = match output_buffer.as_mut_slice(py) {
-        Some(slice) => slice,
+        Some(slice) => {
+            // Convert &[Cell<u8>] to &mut [u8]
+            let mut_slice = unsafe {
+                std::slice::from_raw_parts_mut(
+                    slice.as_ptr() as *mut u8,
+                    slice.len()
+                )
+            };
+            mut_slice
+        },
         None => return Err(PyValueError::new_err("Failed to access output buffer as mutable")),
     };
     
@@ -411,7 +421,16 @@ fn top_k_to_buffer_native(
     
     // Get mutable view of output buffer  
     let output_slice = match output_buffer.as_mut_slice(py) {
-        Some(slice) => slice,
+        Some(slice) => {
+            // Convert &[Cell<u8>] to &mut [u8]
+            let mut_slice = unsafe {
+                std::slice::from_raw_parts_mut(
+                    slice.as_ptr() as *mut u8,
+                    slice.len()
+                )
+            };
+            mut_slice
+        },
         None => return Err(PyValueError::new_err("Failed to access output buffer as mutable")),
     };
     
@@ -438,7 +457,16 @@ fn z_order_to_buffer_native(
     
     // Get mutable view of output buffer  
     let output_slice = match output_buffer.as_mut_slice(py) {
-        Some(slice) => slice,
+        Some(slice) => {
+            // Convert &[Cell<u8>] to &mut [u8]
+            let mut_slice = unsafe {
+                std::slice::from_raw_parts_mut(
+                    slice.as_ptr() as *mut u8,
+                    slice.len()
+                )
+            };
+            mut_slice
+        },
         None => return Err(PyValueError::new_err("Failed to access output buffer as mutable")),
     };
     
