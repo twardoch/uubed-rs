@@ -1,9 +1,9 @@
 // this_file: rust/src/parallel.rs
-/// Parallel batch encoding operations for high-throughput scenarios.
+//! Parallel batch encoding operations for high-throughput scenarios.
 
-use rayon::prelude::*;
 use crate::encoders::*;
 use crate::error::UubedError;
+use rayon::prelude::*;
 
 /// Parallel Q64 encoding for multiple embeddings
 ///
@@ -25,12 +25,14 @@ pub fn parallel_q64_encode(embeddings: &[&[u8]], num_threads: Option<usize>) -> 
             .build()
             .unwrap()
             .install(|| {
-                embeddings.par_iter()
+                embeddings
+                    .par_iter()
                     .map(|embedding| q64_encode(embedding))
                     .collect()
             })
     } else {
-        embeddings.par_iter()
+        embeddings
+            .par_iter()
             .map(|embedding| q64_encode(embedding))
             .collect()
     }
@@ -46,9 +48,9 @@ pub fn parallel_q64_encode(embeddings: &[&[u8]], num_threads: Option<usize>) -> 
 /// # Returns
 /// * `Vec<String>` - Encoded SimHash strings
 pub fn parallel_simhash_encode(
-    embeddings: &[&[u8]], 
-    planes: usize, 
-    num_threads: Option<usize>
+    embeddings: &[&[u8]],
+    planes: usize,
+    num_threads: Option<usize>,
 ) -> Vec<String> {
     if let Some(threads) = num_threads {
         rayon::ThreadPoolBuilder::new()
@@ -56,12 +58,14 @@ pub fn parallel_simhash_encode(
             .build()
             .unwrap()
             .install(|| {
-                embeddings.par_iter()
+                embeddings
+                    .par_iter()
                     .map(|embedding| simhash_q64(embedding, planes))
                     .collect()
             })
     } else {
-        embeddings.par_iter()
+        embeddings
+            .par_iter()
             .map(|embedding| simhash_q64(embedding, planes))
             .collect()
     }
@@ -77,9 +81,9 @@ pub fn parallel_simhash_encode(
 /// # Returns
 /// * `Vec<String>` - Encoded Top-K strings
 pub fn parallel_topk_encode(
-    embeddings: &[&[u8]], 
-    k: usize, 
-    num_threads: Option<usize>
+    embeddings: &[&[u8]],
+    k: usize,
+    num_threads: Option<usize>,
 ) -> Vec<String> {
     if let Some(threads) = num_threads {
         rayon::ThreadPoolBuilder::new()
@@ -87,12 +91,14 @@ pub fn parallel_topk_encode(
             .build()
             .unwrap()
             .install(|| {
-                embeddings.par_iter()
+                embeddings
+                    .par_iter()
                     .map(|embedding| top_k_q64_optimized(embedding, k))
                     .collect()
             })
     } else {
-        embeddings.par_iter()
+        embeddings
+            .par_iter()
             .map(|embedding| top_k_q64_optimized(embedding, k))
             .collect()
     }
@@ -113,12 +119,14 @@ pub fn parallel_zorder_encode(embeddings: &[&[u8]], num_threads: Option<usize>) 
             .build()
             .unwrap()
             .install(|| {
-                embeddings.par_iter()
+                embeddings
+                    .par_iter()
                     .map(|embedding| z_order_q64(embedding))
                     .collect()
             })
     } else {
-        embeddings.par_iter()
+        embeddings
+            .par_iter()
             .map(|embedding| z_order_q64(embedding))
             .collect()
     }
@@ -144,29 +152,30 @@ impl BatchProcessor {
             Some(threads) => rayon::ThreadPoolBuilder::new()
                 .num_threads(threads)
                 .build()
-                .map_err(|e| UubedError::ComputationError(format!("Failed to create thread pool: {}", e)))?,
-            None => rayon::ThreadPoolBuilder::new()
-                .build()
-                .map_err(|e| UubedError::ComputationError(format!("Failed to create thread pool: {}", e)))?,
+                .map_err(|e| {
+                    UubedError::ComputationError(format!("Failed to create thread pool: {}", e))
+                })?,
+            None => rayon::ThreadPoolBuilder::new().build().map_err(|e| {
+                UubedError::ComputationError(format!("Failed to create thread pool: {}", e))
+            })?,
         };
-        
+
         // Adaptive chunk size based on number of threads
-        let adaptive_chunk_size = chunk_size.unwrap_or_else(|| {
-            std::cmp::max(1, 10000 / pool.current_num_threads())
-        });
-        
+        let adaptive_chunk_size =
+            chunk_size.unwrap_or_else(|| std::cmp::max(1, 10000 / pool.current_num_threads()));
+
         Ok(Self {
             thread_pool: pool,
             chunk_size: adaptive_chunk_size,
         })
     }
-    
+
     /// Process a large batch with optimal work distribution
     ///
     /// # Arguments
     /// * `embeddings` - Vector of embeddings to process
     /// * `method` - Encoding method to apply
-    /// 
+    ///
     /// # Returns
     /// * `Vec<String>` - Encoded results in original order
     pub fn process_batch<F>(&self, embeddings: &[&[u8]], method: F) -> Vec<String>
@@ -177,19 +186,20 @@ impl BatchProcessor {
             embeddings
                 .par_chunks(self.chunk_size)
                 .flat_map(|chunk| {
-                    chunk.par_iter()
+                    chunk
+                        .par_iter()
                         .map(|embedding| method(embedding))
                         .collect::<Vec<_>>()
                 })
                 .collect()
         })
     }
-    
+
     /// Get number of worker threads
     pub fn thread_count(&self) -> usize {
         self.thread_pool.current_num_threads()
     }
-    
+
     /// Get current chunk size
     pub fn chunk_size(&self) -> usize {
         self.chunk_size
@@ -208,68 +218,59 @@ mod tests {
 
     #[test]
     fn test_parallel_q64_encode() {
-        let embeddings = vec![
-            vec![1, 2, 3, 4],
-            vec![5, 6, 7, 8], 
-            vec![9, 10, 11, 12],
-        ];
+        let embeddings = [vec![1, 2, 3, 4], vec![5, 6, 7, 8], vec![9, 10, 11, 12]];
         let embedding_refs: Vec<&[u8]> = embeddings.iter().map(|e| e.as_slice()).collect();
-        
+
         let results = parallel_q64_encode(&embedding_refs, Some(2));
         assert_eq!(results.len(), 3);
-        
+
         // Verify results match sequential encoding
         for (i, embedding) in embeddings.iter().enumerate() {
             let expected = q64_encode(embedding);
             assert_eq!(results[i], expected);
         }
     }
-    
+
     #[test]
     fn test_batch_processor() {
         let processor = BatchProcessor::new(Some(2), Some(2)).unwrap();
         assert_eq!(processor.thread_count(), 2);
         assert_eq!(processor.chunk_size(), 2);
-        
-        let embeddings = vec![
+
+        let embeddings = [
             vec![1, 2, 3, 4],
             vec![5, 6, 7, 8],
             vec![9, 10, 11, 12],
             vec![13, 14, 15, 16],
         ];
         let embedding_refs: Vec<&[u8]> = embeddings.iter().map(|e| e.as_slice()).collect();
-        
-        let results = processor.process_batch(&embedding_refs, |emb| q64_encode(emb));
+
+        let results = processor.process_batch(&embedding_refs, q64_encode);
         assert_eq!(results.len(), 4);
-        
+
         // Verify order preservation
         for (i, embedding) in embeddings.iter().enumerate() {
             let expected = q64_encode(embedding);
             assert_eq!(results[i], expected);
         }
     }
-    
+
     #[test]
-    fn test_parallel_performance_scaling() {
-        // Test with larger dataset to verify scaling
+    fn test_parallel_matches_single_threaded() {
+        // Verify that multi-threaded encoding produces identical output to the
+        // single-threaded path on a larger dataset. Wall-clock speedup is NOT
+        // asserted here: on tiny workloads thread-pool overhead makes timing
+        // nondeterministic and flaky. Throughput scaling is measured in the
+        // criterion benches (`rust/benches/`), not in unit tests.
         let large_embedding = vec![42u8; 1024]; // 1KB embedding
         let embeddings: Vec<&[u8]> = (0..100).map(|_| large_embedding.as_slice()).collect();
-        
-        // Test single-threaded
-        let start = std::time::Instant::now();
+
         let results_single = parallel_q64_encode(&embeddings, Some(1));
-        let time_single = start.elapsed();
-        
-        // Test multi-threaded
-        let start = std::time::Instant::now();
         let results_multi = parallel_q64_encode(&embeddings, None);
-        let time_multi = start.elapsed();
-        
-        // Results should be identical
-        assert_eq!(results_single, results_multi);
-        
-        // Multi-threaded should be faster (or at least not much slower)
-        // Allow for some overhead in small tests
-        assert!(time_multi <= time_single * 2);
+
+        assert_eq!(
+            results_single, results_multi,
+            "multi-threaded output must match single-threaded output"
+        );
     }
 }

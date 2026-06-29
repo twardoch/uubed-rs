@@ -5,6 +5,65 @@ All notable changes to the uubed-rs project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-06-29
+
+### Added
+
+- **Continuous integration** (`.github/workflows/ci.yml`): `cargo fmt --check`,
+  `cargo clippy --all-targets -D warnings` (default and `simd`), and a
+  cross-platform test matrix (Linux/macOS/Windows) running `cargo nextest` plus
+  `cargo test --doc`.
+- **Wheel build matrix** (`.github/workflows/wheels.yml`): `maturin` wheels via
+  `PyO3/maturin-action` for Linux x86_64/aarch64, macOS x86_64/arm64, and Windows
+  x64, plus an sdist job. Built with `--features python,simd`.
+- **MaterialX documentation** under `src_docs/` (`mkdocs.yaml` + `md/`): Rust
+  crate API, PyO3 ABI notes, and the wheel build matrix (renders to `docs/`).
+- **`STYLE_GUIDE.md`** documenting file headers, fmt/clippy gates, doc-comment
+  rules, error handling, and feature usage.
+- **Round-trip test over all 256 byte values** in `encoders/q64.rs` verifying
+  lossless Q64 encode/decode for every byte and for each byte in isolation.
+- Explanatory comments on the Z-order / Morton bit interleaving in
+  `encoders/zorder.rs`, and a `///` doc comment on the `z_order_q64_native`
+  PyO3 export.
+
+### Changed
+
+- **Cleared all `cargo clippy --all-targets -D warnings`**: converted module
+  headers to inner doc comments (except `include!`d encoder files), replaced
+  hand-rolled `(x + 7) / 8` with `usize::div_ceil`, `% 2 != 0` with
+  `is_multiple_of`, min/max chains with `clamp`, index loops with iterators,
+  manual buffer fills with `slice::fill`, and removed redundant imports/closures
+  and dead code in benches/examples.
+- **`pyproject.toml`**: `[tool.maturin]` now enables `features = ["python",
+  "simd"]`. The `python` feature is required — the PyO3 module is behind
+  `#[cfg(feature = "python")]`, so prior builds omitting it produced a wheel
+  without the native extension.
+
+### Fixed
+
+- **Property test `prop_topk_optimized_matches_original`**: now discards inputs
+  whose top-k boundary value is tied (where the index set is genuinely
+  ambiguous) instead of asserting byte-identical output from the select-nth and
+  heap selectors.
+- **Integration test `test_simhash_safe_different_inputs`**: replaced collinear
+  test inputs (`[1,2,3,4,5]` vs `[10,20,30,40,50]`) with non-collinear vectors.
+  SimHash is sign-of-projection and therefore scale-invariant, so collinear
+  inputs hash identically — the previous assertion was mathematically invalid.
+- **Flaky timing test `parallel::tests::test_parallel_performance_scaling`**:
+  removed the wall-clock assertion `time_multi <= time_single * 2`, which failed
+  nondeterministically because thread-pool overhead dominates on the tiny
+  workload. Renamed to `test_parallel_matches_single_threaded` and kept the
+  meaningful invariant — multi-threaded output must equal single-threaded output.
+  Throughput scaling is measured in the criterion benches, not in unit tests.
+- The full Rust test suite (unit, integration, property, doctests) is green.
+
+### Status
+
+- **crates.io**: `uubed-rs` is **not published** (the name 404s on crates.io).
+  The crate is consumed internally as a native wheel bundled with the `uubed`
+  PyPI package; it is intentionally not published as a standalone crate. No
+  publish step is wired into CI.
+
 ## [Unreleased] - 2025-07-03
 
 ### Issues Identified

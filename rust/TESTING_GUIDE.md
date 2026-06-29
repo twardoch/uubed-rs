@@ -1,6 +1,6 @@
 # Testing Guide for uubed-rs
 
-This document describes the comprehensive testing strategy implemented for the uubed-rs Rust codebase.
+This document outlines the testing approach for the uubed-rs Rust codebase.
 
 ## Testing Layers
 
@@ -18,7 +18,7 @@ cargo test --lib
 **Coverage**:
 - Q64 encoding/decoding roundtrip tests
 - Top-k algorithm correctness
-- SimHash determinism and locality
+- SimHash determinism and locality sensitivity
 - Z-order encoding consistency
 - Error handling edge cases
 
@@ -111,7 +111,7 @@ cargo fuzz run topk_fuzz
 **Benchmark Suites**:
 - `topk_bench.rs` - Compare original vs optimized Top-k
 - `memory_bench.rs` - Memory usage profiling
-- `large_embedding_bench.rs` - Scale testing with very large data
+- `large_embedding_bench.rs` - Scale testing with large data
 
 **Run with**:
 ```bash
@@ -144,7 +144,7 @@ cargo test simd
 
 ## Error Handling Testing
 
-### Comprehensive Error Types
+### Error Types
 
 **Location**: `src/error.rs`
 
@@ -313,4 +313,4 @@ cargo test --release
 cargo bench --bench topk_bench
 ```
 
-This comprehensive testing strategy ensures the uubed-rs implementation is correct, performant, and robust across all supported platforms and use cases.
+This testing strategy ensures uubed-rs is correct, performant, and robust across supported platforms and use cases.

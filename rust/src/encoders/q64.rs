@@ -1,15 +1,17 @@
 // this_file: rust/src/encoders/q64.rs
-/// QuadB64: Position-safe encoding with SIMD optimization.
+// QuadB64: Position-safe encoding with SIMD optimization.
+// NB: plain `//` (not `//!`) because this file is also `include!`d as a module
+// body by examples/benches, where an inner doc comment would be rejected.
 
 use std::error::Error;
 use std::fmt;
 
 /// Position-dependent alphabets
 const ALPHABETS: [&[u8; 16]; 4] = [
-    b"ABCDEFGHIJKLMNOP",  // pos ≡ 0 (mod 4)
-    b"QRSTUVWXYZabcdef",  // pos ≡ 1
-    b"ghijklmnopqrstuv",  // pos ≡ 2
-    b"wxyz0123456789-_",  // pos ≡ 3
+    b"ABCDEFGHIJKLMNOP", // pos ≡ 0 (mod 4)
+    b"QRSTUVWXYZabcdef", // pos ≡ 1
+    b"ghijklmnopqrstuv", // pos ≡ 2
+    b"wxyz0123456789-_", // pos ≡ 3
 ];
 
 /// Reverse lookup table (ASCII char -> (alphabet_idx, nibble_value))
@@ -109,10 +111,10 @@ fn q64_encode_to_buffer_unchecked(data: &[u8], output: &mut [u8]) {
         let hi_nibble = (byte >> 4) & 0xF;
         let lo_nibble = byte & 0xF;
         let base_pos = byte_idx * 2;
-        
+
         let alphabet_idx_hi = base_pos & 3;
         let alphabet_idx_lo = (base_pos + 1) & 3;
-        
+
         output[base_pos] = ALPHABETS[alphabet_idx_hi][hi_nibble as usize];
         output[base_pos + 1] = ALPHABETS[alphabet_idx_lo][lo_nibble as usize];
     }
@@ -133,13 +135,13 @@ fn q64_encode_scalar(data: &[u8], output: &mut String) {
 }
 
 /// SIMD implementation for x86_64 with SSE2
-/// 
+///
 /// # Safety
 /// This function is safe to call when:
 /// - The target CPU supports SSE2 (checked at compile time via cfg)
 /// - The input slice `data` is valid for its entire length
 /// - The output string has sufficient capacity (pre-allocated by caller)
-/// 
+///
 /// The unsafe operations performed are:
 /// - Loading unaligned data via _mm_loadu_si128 (safe for any alignment)
 /// - Using SIMD intrinsics (safe when target_arch requirements are met)
@@ -262,6 +264,33 @@ mod tests {
     }
 
     #[test]
+    fn test_roundtrip_all_byte_values() {
+        // Encode/decode every possible byte value and assert the round-trip is
+        // lossless. A single 0..=255 buffer also exercises all four
+        // position-dependent alphabets (base_pos % 4) for every nibble value.
+        let data: Vec<u8> = (0..=255).collect();
+        let encoded = q64_encode(&data);
+        assert_eq!(
+            encoded.len(),
+            data.len() * 2,
+            "Q64 encoding must double the byte length"
+        );
+
+        let decoded = q64_decode(&encoded).expect("decoding valid Q64 must succeed");
+        assert_eq!(
+            decoded, data,
+            "round-trip over all 256 byte values must be lossless"
+        );
+
+        // Each byte must also survive on its own (position 0, both nibbles).
+        for b in 0u8..=255 {
+            let enc = q64_encode(&[b]);
+            let dec = q64_decode(&enc).expect("single-byte decode must succeed");
+            assert_eq!(dec, vec![b], "single-byte round-trip failed for {b}");
+        }
+    }
+
+    #[test]
     fn test_position_safety() {
         let data = vec![0, 0, 0, 0];
         let encoded = q64_encode(&data);
@@ -301,10 +330,10 @@ mod tests {
     fn test_q64_encode_to_buffer() {
         let data = vec![0x12, 0x34, 0x56, 0x78];
         let mut buffer = vec![0u8; data.len() * 2];
-        
+
         let bytes_written = q64_encode_to_buffer(&data, &mut buffer).unwrap();
         assert_eq!(bytes_written, data.len() * 2);
-        
+
         // Compare with string version
         let string_encoded = q64_encode(&data);
         let buffer_encoded = String::from_utf8(buffer).unwrap();
@@ -315,7 +344,7 @@ mod tests {
     fn test_q64_encode_to_buffer_too_small() {
         let data = vec![0x12, 0x34];
         let mut buffer = vec![0u8; 3]; // Too small: need 4 bytes
-        
+
         let result = q64_encode_to_buffer(&data, &mut buffer);
         assert!(result.is_err());
     }
@@ -324,7 +353,7 @@ mod tests {
     fn test_q64_encode_to_buffer_empty() {
         let data = vec![];
         let mut buffer = vec![0u8; 0];
-        
+
         let bytes_written = q64_encode_to_buffer(&data, &mut buffer).unwrap();
         assert_eq!(bytes_written, 0);
     }
@@ -332,13 +361,13 @@ mod tests {
     #[test]
     fn test_zero_copy_consistency() {
         let test_data = (0..100).collect::<Vec<u8>>();
-        
+
         // Compare string and buffer versions
         let string_result = q64_encode(&test_data);
         let mut buffer = vec![0u8; test_data.len() * 2];
         q64_encode_to_buffer(&test_data, &mut buffer).unwrap();
         let buffer_result = String::from_utf8(buffer).unwrap();
-        
+
         assert_eq!(string_result, buffer_result);
     }
 }

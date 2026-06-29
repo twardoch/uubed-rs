@@ -1,5 +1,7 @@
 // this_file: rust/src/encoders/topk.rs
-/// Top-k indices encoder for sparse representation.
+// Top-k indices encoder for sparse representation.
+// NB: plain `//` (not `//!`) because this file is also `include!`d as a module
+// body by examples/benches, where an inner doc comment would be rejected.
 
 use rayon::prelude::*;
 
@@ -31,10 +33,7 @@ fn top_k_indices_small(embedding: &[u8], k: usize) -> Vec<u8> {
     }
 
     // Extract indices and sort them
-    let mut indices: Vec<u8> = indexed[..k_clamped]
-        .iter()
-        .map(|(_, idx)| *idx)
-        .collect();
+    let mut indices: Vec<u8> = indexed[..k_clamped].iter().map(|(_, idx)| *idx).collect();
     indices.sort_unstable();
 
     // Pad with 255 if needed
@@ -46,10 +45,7 @@ fn top_k_indices_small(embedding: &[u8], k: usize) -> Vec<u8> {
 fn top_k_indices_parallel(embedding: &[u8], k: usize) -> Vec<u8> {
     // Split into chunks for parallel processing
     let chunk_size = 256;
-    let chunks: Vec<_> = embedding
-        .chunks(chunk_size)
-        .enumerate()
-        .collect();
+    let chunks: Vec<_> = embedding.chunks(chunk_size).enumerate().collect();
 
     // Find top candidates from each chunk in parallel
     let candidates: Vec<(u8, usize)> = chunks
@@ -104,14 +100,14 @@ mod tests {
     fn test_top_k_basic() {
         let data = vec![10, 50, 30, 80, 20, 90, 40, 70];
         let top3 = top_k_indices(&data, 3);
-        assert_eq!(top3, vec![3, 5, 7]);  // Indices of 80, 90, 70
+        assert_eq!(top3, vec![3, 5, 7]); // Indices of 80, 90, 70
     }
 
     #[test]
     fn test_top_k_padding() {
         let data = vec![10, 20, 30];
         let top5 = top_k_indices(&data, 5);
-        assert_eq!(top5, vec![0, 1, 2, 255, 255]);  // Padded with 255
+        assert_eq!(top5, vec![0, 1, 2, 255, 255]); // Padded with 255
     }
 
     #[test]

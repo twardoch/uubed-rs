@@ -58,8 +58,10 @@ dev = [
 manifest-path = "rust/Cargo.toml"
 # Build release builds by default
 profile = "release"
-# Enable all features by default for distribution
-features = ["simd"]
+# Enable the PyO3 bindings (`python`) and SIMD fast paths for distribution.
+# `python` is required: the pymodule lives behind `#[cfg(feature = "python")]`,
+# so omitting it produces a wheel without the native extension.
+features = ["python", "simd"]
 # Python source directory (if we had Python sources)
 # python-source = "python"
 # Compatibility tags

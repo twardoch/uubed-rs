@@ -1,8 +1,8 @@
 // this_file: rust/src/encoders/mq64.rs
 //! Matryoshka QuadB64 (Mq64): Hierarchical position-safe encoding prototype
-use crate::encoders::q64_encode;
-use crate::encoders::q64_decode;
 use crate::encoders::q64::Q64Error;
+use crate::encoders::q64_decode;
+use crate::encoders::q64_encode;
 
 /// Encode data into Mq64 string using default hierarchical levels (powers of two up to full length)
 pub fn mq64_encode(data: &[u8]) -> String {

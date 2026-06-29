@@ -1,5 +1,7 @@
 // this_file: rust/src/encoders/topk_optimized.rs
-/// Optimized Top-k indices encoder with SIMD and memory optimizations.
+// Optimized Top-k indices encoder with SIMD and memory optimizations.
+// NB: plain `//` (not `//!`) because this file is also `include!`d as a module
+// body by examples/benches, where an inner doc comment would be rejected.
 
 use rayon::prelude::*;
 use std::cmp::Reverse;
@@ -17,7 +19,7 @@ pub fn top_k_indices_optimized(embedding: &[u8], k: usize) -> Vec<u8> {
     }
 
     let len = embedding.len();
-    
+
     if len <= 256 {
         // Optimized small path
         top_k_indices_small_optimized(embedding, k)
@@ -33,7 +35,7 @@ pub fn top_k_indices_optimized(embedding: &[u8], k: usize) -> Vec<u8> {
 /// Optimized implementation for small embeddings
 fn top_k_indices_small_optimized(embedding: &[u8], k: usize) -> Vec<u8> {
     let k_clamped = k.min(embedding.len());
-    
+
     // For very small k or when k is close to n, use different strategies
     if k_clamped <= 4 || k_clamped as f32 / embedding.len() as f32 > 0.25 {
         // Use the original approach for these cases
@@ -47,33 +49,30 @@ fn top_k_indices_small_optimized(embedding: &[u8], k: usize) -> Vec<u8> {
             indexed.select_nth_unstable_by(k_clamped - 1, |a, b| b.0.cmp(&a.0));
         }
 
-        let mut indices: Vec<u8> = indexed[..k_clamped]
-            .iter()
-            .map(|(_, idx)| *idx)
-            .collect();
+        let mut indices: Vec<u8> = indexed[..k_clamped].iter().map(|(_, idx)| *idx).collect();
         indices.sort_unstable();
         indices.resize(k, 255);
         return indices;
     }
-    
+
     // Use heap for other cases
     use std::collections::BinaryHeap;
     let mut heap = BinaryHeap::with_capacity(k_clamped + 1);
-    
+
     for (idx, &val) in embedding.iter().enumerate() {
         heap.push(Reverse((val, idx as u8)));
         if heap.len() > k_clamped {
             heap.pop();
         }
     }
-    
+
     // Extract and sort indices
     let mut indices: Vec<u8> = heap
         .into_sorted_vec()
         .into_iter()
         .map(|Reverse((_, idx))| idx)
         .collect();
-    
+
     indices.sort_unstable();
     indices.resize(k, 255);
     indices
@@ -82,12 +81,12 @@ fn top_k_indices_small_optimized(embedding: &[u8], k: usize) -> Vec<u8> {
 /// Heap-based approach for large embeddings with small k
 fn top_k_indices_heap(embedding: &[u8], k: usize) -> Vec<u8> {
     use std::collections::BinaryHeap;
-    
+
     let k_clamped = k.min(embedding.len());
-    
+
     // Track top k using min-heap
     let mut heap = BinaryHeap::with_capacity(k_clamped + 1);
-    
+
     for (idx, &val) in embedding.iter().enumerate() {
         if heap.len() < k_clamped {
             heap.push(Reverse((val, idx)));
@@ -98,14 +97,14 @@ fn top_k_indices_heap(embedding: &[u8], k: usize) -> Vec<u8> {
             }
         }
     }
-    
+
     // Extract indices, handle large indices
     let mut indices: Vec<u8> = heap
         .into_sorted_vec()
         .into_iter()
         .map(|Reverse((_, idx))| idx.min(255) as u8)
         .collect();
-    
+
     indices.sort_unstable();
     indices.resize(k, 255);
     indices
@@ -115,8 +114,8 @@ fn top_k_indices_heap(embedding: &[u8], k: usize) -> Vec<u8> {
 fn top_k_indices_parallel_optimized(embedding: &[u8], k: usize) -> Vec<u8> {
     // Adaptive chunk size based on embedding length and available threads
     let num_threads = rayon::current_num_threads();
-    let chunk_size = ((embedding.len() + num_threads - 1) / num_threads).max(256);
-    
+    let chunk_size = embedding.len().div_ceil(num_threads).max(256);
+
     // Process chunks in parallel with pre-allocated space
     let candidates: Vec<Vec<(u8, usize)>> = embedding
         .par_chunks(chunk_size)
@@ -124,49 +123,49 @@ fn top_k_indices_parallel_optimized(embedding: &[u8], k: usize) -> Vec<u8> {
         .map(|(chunk_idx, chunk)| {
             let base_idx = chunk_idx * chunk_size;
             let local_k = k.min(chunk.len());
-            
+
             if local_k == 0 {
                 return Vec::new();
             }
-            
+
             // Use heap for efficient top-k selection in each chunk
             use std::collections::BinaryHeap;
             let mut heap = BinaryHeap::with_capacity(local_k + 1);
-            
+
             for (idx, &val) in chunk.iter().enumerate() {
                 heap.push(Reverse((val, base_idx + idx)));
                 if heap.len() > local_k {
                     heap.pop();
                 }
             }
-            
+
             heap.into_sorted_vec()
                 .into_iter()
                 .map(|Reverse(item)| item)
                 .collect()
         })
         .collect();
-    
+
     // Merge candidates efficiently
     let total_candidates: usize = candidates.iter().map(|v| v.len()).sum();
     let mut all_candidates = Vec::with_capacity(total_candidates);
-    
+
     for chunk_candidates in candidates {
         all_candidates.extend(chunk_candidates);
     }
-    
+
     // Final top-k selection
     let final_k = k.min(all_candidates.len());
     if final_k > 0 {
         all_candidates.select_nth_unstable_by(final_k - 1, |a, b| b.0.cmp(&a.0));
     }
-    
+
     // Extract indices with bounds checking
     let mut indices: Vec<u8> = all_candidates[..final_k]
         .iter()
         .map(|(_, idx)| (*idx).min(255) as u8)
         .collect();
-    
+
     indices.sort_unstable();
     indices.resize(k, 255);
     indices
@@ -195,7 +194,11 @@ pub fn top_k_q64_optimized(embedding: &[u8], k: usize) -> String {
 /// # Performance
 /// - Zero allocation encoding for maximum performance
 /// - Reuses optimized top-k selection algorithms
-pub fn top_k_to_buffer(embedding: &[u8], k: usize, output: &mut [u8]) -> Result<usize, super::q64::Q64Error> {
+pub fn top_k_to_buffer(
+    embedding: &[u8],
+    k: usize,
+    output: &mut [u8],
+) -> Result<usize, super::q64::Q64Error> {
     let indices = top_k_indices_optimized(embedding, k);
     super::q64::q64_encode_to_buffer(&indices, output)
 }
@@ -208,7 +211,7 @@ mod tests {
     fn test_optimized_matches_original() {
         let data = vec![10, 50, 30, 80, 20, 90, 40, 70];
         let top3 = top_k_indices_optimized(&data, 3);
-        assert_eq!(top3, vec![3, 5, 7]);  // Indices of 80, 90, 70
+        assert_eq!(top3, vec![3, 5, 7]); // Indices of 80, 90, 70
     }
 
     #[test]
@@ -217,7 +220,7 @@ mod tests {
         data[100] = 255;
         data[500] = 200;
         data[900] = 150;
-        
+
         let top3 = top_k_indices_heap(&data, 3);
         assert!(top3.contains(&100));
         assert!(top3.contains(&255)); // 500 clamped to 255
@@ -231,7 +234,7 @@ mod tests {
         data[1000] = 255;
         data[5000] = 250;
         data[9999] = 245;
-        
+
         let top3 = top_k_indices_parallel_optimized(&data, 3);
         assert_eq!(top3.len(), 3);
         // Verify indices are sorted
@@ -242,10 +245,10 @@ mod tests {
     fn test_edge_cases() {
         // Empty data
         assert_eq!(top_k_indices_optimized(&[], 5), vec![255; 5]);
-        
+
         // k = 0
         assert_eq!(top_k_indices_optimized(&[1, 2, 3], 0), vec![]);
-        
+
         // k > len
         let data = vec![10, 20];
         assert_eq!(top_k_indices_optimized(&data, 5), vec![0, 1, 255, 255, 255]);

@@ -1,0 +1,46 @@
+# this_file: src_docs/mkdocs.yaml
+# MkDocs + Material configuration for the uubed-rs documentation.
+# Build with: mkdocs build -f src_docs/mkdocs.yaml  (output -> ../docs)
+site_name: uubed-rs
+site_description: High-performance Rust core for position-safe embedding encoding (QuadB64).
+site_author: Adam Twardoch
+repo_url: https://github.com/twardoch/uubed
+docs_dir: md
+site_dir: ../docs
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - toc.follow
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
+  - Rust crate API: rust-api.md
+  - PyO3 ABI notes: pyo3-abi.md
+  - Wheel build matrix: wheel-matrix.md

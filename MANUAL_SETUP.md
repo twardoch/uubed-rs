@@ -1,16 +1,16 @@
 # Manual Setup Guide for GitHub Actions
 
-Due to GitHub App permissions, the workflow files need to be added manually. Here's how to complete the setup:
+GitHub App permissions require you to add workflow files manually. Here's what to do:
 
 ## 1. Create GitHub Actions Workflows
 
-You need to manually create these two files in your repository:
+Add these two files to your repository:
 
 ### `.github/workflows/ci.yml`
-This file handles continuous integration testing.
+Runs continuous integration tests.
 
 ### `.github/workflows/release.yml`
-This file handles automated releases when you push git tags.
+Handles automated releases when pushing git tags.
 
 ## 2. Workflow File Contents
 
@@ -550,25 +550,25 @@ jobs:
 
 ## 3. Optional: Configure PyPI Token
 
-If you want automatic PyPI publishing, add a `PYPI_TOKEN` secret to your GitHub repository:
+For automatic PyPI publishing, add a `PYPI_TOKEN` secret:
 
-1. Go to your repository settings
-2. Click on "Secrets and variables" → "Actions"
+1. Go to repository settings
+2. Click "Secrets and variables" → "Actions"
 3. Click "New repository secret"
 4. Name: `PYPI_TOKEN`
 5. Value: Your PyPI API token
 
 ## 4. Test the Setup
 
-Once you've added the workflow files:
+After adding workflow files:
 
 1. Push them to your repository
-2. The CI workflow will run on pushes to main/develop
-3. The release workflow will run when you push a git tag
+2. CI runs on pushes to main/develop
+3. Release workflow runs when pushing git tags
 
 ## 5. Using the System
 
-All the local scripts are ready to use:
+Local scripts are ready:
 
 ```bash
 # Show current version
@@ -584,4 +584,4 @@ All the local scripts are ready to use:
 ./build-and-test-and-release.sh --full
 ```
 
-The system is fully functional - you just need to manually add the workflow files due to GitHub App permissions.
+The system works. You just had to manually add the workflow files because of GitHub App permissions.

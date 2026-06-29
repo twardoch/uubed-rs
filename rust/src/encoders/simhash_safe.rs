@@ -1,8 +1,7 @@
 // this_file: rust/src/encoders/simhash_safe.rs
-/// Thread-safe SimHash implementation with lock-free caching.
+//! Thread-safe SimHash implementation with lock-free caching.
 
 use rayon::prelude::*;
-use once_cell::sync::Lazy;
 use std::sync::Arc;
 
 // Using Arc<DashMap> for lock-free concurrent access
@@ -48,7 +47,8 @@ impl ProjectionMatrix {
     fn get_or_create(planes: usize, dims: usize) -> Arc<ProjectionMatrix> {
         MATRIX_CACHE.with(|cache| {
             let mut cache = cache.borrow_mut();
-            cache.entry((planes, dims))
+            cache
+                .entry((planes, dims))
                 .or_insert_with(|| Arc::new(ProjectionMatrix::new(planes, dims)))
                 .clone()
         })
@@ -65,9 +65,10 @@ impl ProjectionMatrix {
                 let offset = plane * self.dims;
                 let mut dot_product = 0.0f32;
 
-                // Compute dot product with this hyperplane
-                for i in 0..min_len {
-                    dot_product += embedding[i] as f32 * self.data[offset + i];
+                // Compute dot product with this hyperplane. Enumerate the
+                // embedding so `i` indexes the matrix row at `offset + i`.
+                for (i, &e) in embedding.iter().enumerate().take(min_len) {
+                    dot_product += e as f32 * self.data[offset + i];
                 }
 
                 // Return sign of projection
@@ -83,7 +84,7 @@ pub fn simhash(embedding: &[u8], planes: usize) -> Vec<u8> {
     let bits = matrix.project(embedding);
 
     // Pack bits into bytes
-    let mut hash = vec![0u8; (planes + 7) / 8];
+    let mut hash = vec![0u8; planes.div_ceil(8)];
     for (i, &bit) in bits.iter().enumerate() {
         if bit {
             hash[i / 8] |= 1 << (i % 8);
@@ -106,21 +107,17 @@ mod tests {
     #[test]
     fn test_thread_safety() {
         use std::thread;
-        
+
         let embedding = vec![1, 2, 3, 4, 5, 6, 7, 8];
         let handles: Vec<_> = (0..10)
             .map(|_| {
                 let emb = embedding.clone();
-                thread::spawn(move || {
-                    simhash(&emb, 64)
-                })
+                thread::spawn(move || simhash(&emb, 64))
             })
             .collect();
-        
-        let results: Vec<_> = handles.into_iter()
-            .map(|h| h.join().unwrap())
-            .collect();
-        
+
+        let results: Vec<_> = handles.into_iter().map(|h| h.join().unwrap()).collect();
+
         // All threads should produce the same result
         for i in 1..results.len() {
             assert_eq!(results[0], results[i]);
@@ -147,7 +144,7 @@ mod tests {
     #[test]
     fn test_concurrent_access() {
         use rayon::prelude::*;
-        
+
         // Test parallel access with different embedding sizes
         let results: Vec<_> = (0..100)
             .into_par_iter()
@@ -157,7 +154,7 @@ mod tests {
                 simhash(&embedding, 64)
             })
             .collect();
-        
+
         // Verify we got results for all
         assert_eq!(results.len(), 100);
     }

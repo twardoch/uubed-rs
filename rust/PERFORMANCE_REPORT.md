@@ -2,15 +2,15 @@
 
 ## Executive Summary
 
-This report details the performance optimizations and benchmarks conducted on the uubed-rs Rust implementation, focusing on the Top-k encoder optimization, memory usage profiling, and performance with very large embeddings.
+This report covers performance optimizations and benchmarks for the uubed-rs Rust library, focusing on Top-k encoder improvements, memory usage, and behavior with large embeddings.
 
 ## 1. Top-k Encoder Optimization
 
-### Improvements Implemented:
-1. **Heap-based selection** for better cache locality
-2. **Adaptive algorithm selection** based on input size and k value
-3. **Improved parallel processing** with better work distribution
-4. **Reduced memory allocations**
+### Key Changes:
+1. Heap-based selection for better cache locality  
+2. Adaptive algorithm switching based on input size and k value  
+3. Improved parallel processing with balanced work distribution  
+4. Reduced memory allocations  
 
 ### Performance Results:
 
@@ -22,41 +22,41 @@ This report details the performance optimizations and benchmarks conducted on th
 | 16,384         | 64      | 120           | 73             | +39%        |
 | 65,536         | 128     | ~500          | ~200           | +60%        |
 
-*Note: For small embeddings (≤256), the heap approach has overhead. The optimized version automatically switches to the original algorithm for these cases.
+*Note: For small embeddings (≤256), the heap approach introduces overhead. The optimized version switches to the original method in these cases.
 
-### Key Findings:
-- **35-67% performance improvement** for embeddings ≥ 4,096 elements
-- Particularly effective for small k values on large data
-- Scales better with increasing embedding size
+### Findings:
+- 35–67% performance gain for embeddings ≥ 4,096 elements  
+- Strongest gains occur with small k values on large inputs  
+- Scales more effectively as embedding size increases  
 
 ## 2. Memory Usage Analysis
 
 ### Memory Footprint by Encoder:
 
 #### Q64 Encoding:
-- Linear memory usage: ~2x input size (for output string)
-- No significant allocations beyond output buffer
-- Excellent memory efficiency
+- Memory usage is ~2x the input size (output string buffer)  
+- No significant extra allocations  
+- Efficient overall  
 
 #### Top-k Encoding:
 | Implementation | Memory Overhead | Notes |
 |----------------|-----------------|-------|
 | Original       | O(n) + O(k)     | Full vector copy for sorting |
-| Optimized      | O(k)            | Only maintains k elements in heap |
+| Optimized      | O(k)            | Maintains only k elements in heap |
 
 #### SimHash:
-- Matrix cache: O(planes × dims) - one-time allocation
-- Per-operation: O(planes) for bit packing
-- Thread-local caching reduces contention
+- Matrix cache: O(planes × dims) – one-time allocation  
+- Per operation: O(planes) for bit packing  
+- Thread-local caching avoids contention  
 
 ### Concurrent Load Testing:
-- Peak memory usage scales linearly with thread count
-- No memory leaks detected
-- Efficient memory reuse across operations
+- Peak memory scales linearly with thread count  
+- No leaks detected  
+- Memory reuse works as expected  
 
 ## 3. Very Large Embedding Performance
 
-### Scaling Analysis (Top-k with k=128):
+### Scaling Analysis (Top-k, k=128):
 
 | Size (elements) | Time (ms) | Throughput (M elem/s) |
 |-----------------|-----------|----------------------|
@@ -66,57 +66,54 @@ This report details the performance optimizations and benchmarks conducted on th
 | 20M             | 280       | 71                   |
 | 50M             | 720       | 69                   |
 
-### Pattern-Specific Performance:
-Different data patterns show varying performance characteristics:
-
+### Data Pattern Impact:
 1. **Sparse Data (90% zeros)**:
-   - Best performance due to early termination opportunities
-   - 15-20% faster than random data
+   - Fastest performance due to early exits  
+   - 15–20% faster than random data  
 
 2. **Clustered Data**:
-   - Similar to random data performance
-   - Good cache locality within clusters
+   - Matches random data performance  
+   - Cache-friendly within clusters  
 
 3. **Gradient Data**:
-   - Slightly worse performance
-   - Less benefit from parallel processing
+   - Slightly slower  
+   - Limited benefit from parallelism  
 
-## 4. Thread Safety Verification
+## 4. Thread Safety
 
-All encoders have been verified for thread safety:
+All encoders pass thread safety checks.
 
-### Safety Guarantees:
-1. **No global mutable state** (except SimHash cache with proper synchronization)
-2. **All operations on immutable data**
-3. **Proper use of Send/Sync traits**
-4. **No data races in parallel code**
+### Safety Features:
+1. No global mutable state (SimHash cache uses synchronization)  
+2. Operations work on immutable data  
+3. Correct use of Send/Sync traits  
+4. No data races in parallel code  
 
 ### Concurrent Performance:
-- Linear scaling up to 8 threads
-- Minimal contention on shared resources
-- Consistent results across all thread configurations
+- Linear scaling up to 8 threads  
+- Minimal resource contention  
+- Consistent output across runs  
 
 ## 5. Recommendations
 
-### For Maximum Performance:
-1. Use **optimized Top-k** for embeddings > 1024 elements
-2. Batch operations when possible to amortize setup costs
-3. Consider pre-allocating output buffers for repeated operations
+### For Speed:
+1. Use optimized Top-k for embeddings > 1024 elements  
+2. Batch operations to reduce setup overhead  
+3. Pre-allocate output buffers when reusing encoders  
 
-### For Memory-Constrained Environments:
-1. Use streaming approaches for very large datasets
-2. Consider chunked processing for embeddings > 100M elements
-3. Monitor SimHash matrix cache size for high-dimensional data
+### For Low Memory Use:
+1. Stream or chunk data for embeddings > 100M elements  
+2. Monitor SimHash matrix cache with high-dimensional inputs  
 
-### Future Optimizations:
-1. **SIMD implementation** for Top-k (partially implemented, needs AVX2/AVX-512)
-2. **GPU acceleration** for massive parallel operations
-3. **Zero-copy interfaces** for Python bindings
-4. **Concurrent data structures** for SimHash cache (e.g., dashmap)
+### Future Work:
+1. Finish SIMD support for Top-k (AVX2/AVX-512 pending)  
+2. Explore GPU acceleration for bulk operations  
+3. Add zero-copy interfaces for Python bindings  
+4. Use concurrent data structures (e.g., dashmap) for SimHash cache  
 
 ## 6. Benchmark Commands
 
-To reproduce these results:
+To reproduce results:
 
 ```bash
 # Top-k performance comparison
@@ -125,13 +122,13 @@ cargo bench --bench topk_bench
 # Memory usage profiling
 cargo bench --bench memory_bench
 
-# Very large embedding tests
+# Large embedding tests
 cargo bench --bench large_embedding_bench
 
-# Quick performance test
+# Quick performance check
 cargo run --release --example topk_perf
 ```
 
 ## Conclusion
 
-The optimizations successfully improve performance for real-world use cases while maintaining correctness and thread safety. The implementation scales well to very large embeddings (tested up to 50M elements) and shows consistent performance under concurrent load.
+Optimizations deliver measurable gains for typical use cases while preserving correctness and thread safety. Performance scales acceptably to embeddings of 50M elements and remains stable under concurrent load.

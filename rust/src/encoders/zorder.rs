@@ -8,22 +8,22 @@
 /// Z-order codes and thus similar prefixes.
 pub fn z_order_q64(embedding: &[u8]) -> String {
     // Take top 2 bits from each dimension
-    let quantized: Vec<u8> = embedding
-        .iter()
-        .map(|&b| (b >> 6) & 0b11)
-        .collect();
+    let quantized: Vec<u8> = embedding.iter().map(|&b| (b >> 6) & 0b11).collect();
 
     // We'll interleave bits from up to 16 dimensions into a 32-bit value
     let dims_to_use = quantized.len().min(16);
     let mut result: u32 = 0;
 
-    // Bit interleaving using bit manipulation tricks
-    for dim in 0..dims_to_use {
-        let val = quantized[dim] as u32;
+    // Morton (Z-order) interleave: each dimension contributes 2 quantized bits,
+    // and consecutive dimensions occupy adjacent bit-pairs of the 32-bit result.
+    // Dimension `dim` owns bit position `dim*2` (its low bit) and `dim*2 + 1`
+    // (its high bit). Because neighbouring dimensions land in neighbouring
+    // bit-pairs, points that are close in the source space share long common
+    // prefixes once the integer is serialized big-endian.
+    for (dim, &q) in quantized.iter().enumerate().take(dims_to_use) {
+        let val = q as u32;
 
-        // Spread the 2 bits across the result
-        // Bit 0 goes to position dim*2
-        // Bit 1 goes to position dim*2 + 1
+        // Bit 0 -> position dim*2, bit 1 -> position dim*2 + 1.
         result |= (val & 0b01) << (dim * 2);
         result |= ((val & 0b10) >> 1) << (dim * 2 + 1);
     }
@@ -38,22 +38,22 @@ pub fn z_order_q64(embedding: &[u8]) -> String {
 /// This version uses 4 bits per dimension for finer granularity
 pub fn z_order_q64_extended(embedding: &[u8]) -> String {
     // Take top 4 bits from each dimension
-    let quantized: Vec<u8> = embedding
-        .iter()
-        .map(|&b| (b >> 4) & 0b1111)
-        .collect();
+    let quantized: Vec<u8> = embedding.iter().map(|&b| (b >> 4) & 0b1111).collect();
 
     // We can fit 8 dimensions × 4 bits = 32 bits
     let dims_to_use = quantized.len().min(8);
     let mut result: u32 = 0;
 
-    // Interleave 4 bits from each dimension
-    for dim in 0..dims_to_use {
-        let val = quantized[dim] as u32;
+    // Interleave 4 bits from each dimension. The four bits of a single
+    // dimension are scattered one-per-byte-lane: bit `b` of dimension `dim`
+    // lands at result position `b*8 + dim`. Spreading a dimension's bits across
+    // lanes (rather than packing them contiguously) keeps the most significant
+    // bit of every dimension in the high byte, so the big-endian prefix orders
+    // points primarily by their coarsest coordinate. A production encoder would
+    // use a precomputed lookup table or the BMI2 PDEP instruction here.
+    for (dim, &q) in quantized.iter().enumerate().take(dims_to_use) {
+        let val = q as u32;
 
-        // Use bit manipulation to spread bits
-        // This is a simplified version - production code would use
-        // lookup tables or PDEP instruction for efficiency
         for bit in 0..4 {
             let bit_val = (val >> bit) & 1;
             result |= bit_val << (bit * 8 + dim);
@@ -78,28 +78,30 @@ pub fn z_order_q64_extended(embedding: &[u8]) -> String {
 /// # Performance
 /// - Zero allocation encoding for maximum performance
 /// - Directly writes to output buffer
-pub fn z_order_to_buffer(embedding: &[u8], output: &mut [u8]) -> Result<usize, super::q64::Q64Error> {
+pub fn z_order_to_buffer(
+    embedding: &[u8],
+    output: &mut [u8],
+) -> Result<usize, super::q64::Q64Error> {
     // Quantize to 4 bits per dimension (0-15 range)
-    let quantized: Vec<u8> = embedding.iter()
-        .take(8)
-        .map(|&b| b >> 4)
-        .collect();
-    
+    let quantized: Vec<u8> = embedding.iter().take(8).map(|&b| b >> 4).collect();
+
     // Pad with zeros if needed
     let dims_to_use = quantized.len().min(8);
-    
+
     let mut result = 0u32;
-    
-    // Interleave 4 bits from each dimension
-    for dim in 0..dims_to_use {
-        let val = quantized[dim] as u32;
-        
+
+    // Same 4-bit-per-dimension Morton interleave as `z_order_q64_extended`
+    // (bit `b` of dimension `dim` -> position `b*8 + dim`), computed on a stack
+    // value before the zero-copy Q64 step below.
+    for (dim, &q) in quantized.iter().enumerate().take(dims_to_use) {
+        let val = q as u32;
+
         for bit in 0..4 {
             let bit_val = (val >> bit) & 1;
             result |= bit_val << (bit * 8 + dim);
         }
     }
-    
+
     // Convert to bytes
     let bytes = result.to_be_bytes();
     super::q64::q64_encode_to_buffer(&bytes, output)
@@ -114,10 +116,7 @@ pub fn z_order_q64_fast(embedding: &[u8]) -> String {
     const MORTON_TABLE_X: [u32; 4] = [0b00, 0b01, 0b100, 0b101];
     const MORTON_TABLE_Y: [u32; 4] = [0b00, 0b10, 0b1000, 0b1010];
 
-    let quantized: Vec<u8> = embedding
-        .iter()
-        .map(|&b| (b >> 6) & 0b11)
-        .collect();
+    let quantized: Vec<u8> = embedding.iter().map(|&b| (b >> 6) & 0b11).collect();
 
     let mut result: u32 = 0;
 
@@ -141,21 +140,23 @@ mod tests {
     #[test]
     fn test_z_order_basic() {
         // Test that similar inputs produce similar codes
-        let vec1 = vec![255, 255, 0, 0];  // Top-left in 2D
-        let vec2 = vec![255, 254, 0, 0];  // Very close to vec1
-        let vec3 = vec![0, 0, 255, 255];  // Bottom-right in 2D
+        let vec1 = vec![255, 255, 0, 0]; // Top-left in 2D
+        let vec2 = vec![255, 254, 0, 0]; // Very close to vec1
+        let vec3 = vec![0, 0, 255, 255]; // Bottom-right in 2D
 
         let z1 = z_order_q64(&vec1);
         let z2 = z_order_q64(&vec2);
         let z3 = z_order_q64(&vec3);
 
         // z1 and z2 should share a longer prefix than z1 and z3
-        let prefix_len_12 = z1.chars()
+        let prefix_len_12 = z1
+            .chars()
             .zip(z2.chars())
             .take_while(|(a, b)| a == b)
             .count();
 
-        let prefix_len_13 = z1.chars()
+        let prefix_len_13 = z1
+            .chars()
             .zip(z3.chars())
             .take_while(|(a, b)| a == b)
             .count();
