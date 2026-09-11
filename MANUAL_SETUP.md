@@ -72,44 +72,44 @@ jobs:
         choco install jq
         
     - name: Check formatting
-      run: cd rust && cargo fmt --check
+      run: cd crates/uubed-core && cargo fmt --check
       
     - name: Run clippy
-      run: cd rust && cargo clippy --all-features -- -D warnings
+      run: cd crates/uubed-core && cargo clippy --all-features -- -D warnings
       
     - name: Run tests
-      run: cd rust && cargo test --release --no-default-features --features capi
+      run: cd crates/uubed-core && cargo test --release --no-default-features --features capi
       
     - name: Run tests with all features
-      run: cd rust && cargo test --release --all-features
+      run: cd crates/uubed-core && cargo test --release --all-features
       
     - name: Build C API demo (Unix)
       if: matrix.os != 'windows-latest'
       run: |
-        cd rust && cargo build --release --no-default-features --features capi
+        cd crates/uubed-core && cargo build --release --no-default-features --features capi
         cd ..
         make examples
         
     - name: Build C API demo (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        cd rust && cargo build --release --no-default-features --features capi
+        cd crates/uubed-core && cargo build --release --no-default-features --features capi
         cd ..
-        gcc -Iinclude examples/c_api_demo.c -o examples/c_api_demo.exe -Lrust/target/release -luubed_native
+        gcc -Iinclude examples/c_api_demo.c -o examples/c_api_demo.exe -Ltarget/release -luubed_core
       
     - name: Test C API demo (Unix)
       if: matrix.os != 'windows-latest'
       run: |
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-          LD_LIBRARY_PATH=rust/target/release ./examples/c_api_demo
+          LD_LIBRARY_PATH=target/release ./examples/c_api_demo
         elif [[ "$OSTYPE" == "darwin"* ]]; then
-          DYLD_LIBRARY_PATH=rust/target/release ./examples/c_api_demo
+          DYLD_LIBRARY_PATH=target/release ./examples/c_api_demo
         fi
         
     - name: Test C API demo (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        $env:PATH = "rust/target/release;$env:PATH"
+        $env:PATH = "target/release;$env:PATH"
         ./examples/c_api_demo.exe
 
   python-test:
@@ -186,7 +186,7 @@ jobs:
       run: cargo install cargo-audit
     
     - name: Run security audit
-      run: cd rust && cargo audit
+      run: cd crates/uubed-core && cargo audit
 
   benchmarks:
     name: Benchmarks
@@ -205,7 +205,7 @@ jobs:
         workspaces: rust
     
     - name: Run benchmarks
-      run: cd rust && cargo bench --no-run
+      run: cd crates/uubed-core && cargo bench --no-run
     
     - name: Store benchmark results
       uses: benchmark-action/github-action-benchmark@v1
@@ -213,7 +213,7 @@ jobs:
       with:
         name: Rust Benchmark
         tool: 'cargo'
-        output-file-path: rust/target/criterion/report/index.html
+        output-file-path: target/criterion/report/index.html
         github-token: ${{ secrets.GITHUB_TOKEN }}
         auto-push: true
         comment-on-alert: true
@@ -324,7 +324,7 @@ jobs:
     
     - name: Build binary
       run: |
-        cd rust
+        cd crates/uubed-core
         cargo build --release --target ${{ matrix.target }} --no-default-features --features capi
     
     - name: Create package
@@ -336,15 +336,15 @@ jobs:
         
         # Copy library files
         if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-          cp "rust/target/${{ matrix.target }}/release/uubed_native.dll" "dist/$PACKAGE_NAME/"
-          cp "rust/target/${{ matrix.target }}/release/uubed_native.lib" "dist/$PACKAGE_NAME/"
-          cp "rust/target/${{ matrix.target }}/release/uubed_native.dll.lib" "dist/$PACKAGE_NAME/" || true
+          cp "target/${{ matrix.target }}/release/uubed_native.dll" "dist/$PACKAGE_NAME/"
+          cp "target/${{ matrix.target }}/release/uubed_native.lib" "dist/$PACKAGE_NAME/"
+          cp "target/${{ matrix.target }}/release/uubed_native.dll.lib" "dist/$PACKAGE_NAME/" || true
         elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-          cp "rust/target/${{ matrix.target }}/release/libuubed_native.dylib" "dist/$PACKAGE_NAME/"
-          cp "rust/target/${{ matrix.target }}/release/libuubed_native.a" "dist/$PACKAGE_NAME/"
+          cp "target/${{ matrix.target }}/release/libuubed_core.dylib" "dist/$PACKAGE_NAME/"
+          cp "target/${{ matrix.target }}/release/libuubed_core.a" "dist/$PACKAGE_NAME/"
         else
-          cp "rust/target/${{ matrix.target }}/release/libuubed_native.so" "dist/$PACKAGE_NAME/"
-          cp "rust/target/${{ matrix.target }}/release/libuubed_native.a" "dist/$PACKAGE_NAME/"
+          cp "target/${{ matrix.target }}/release/libuubed_core.so" "dist/$PACKAGE_NAME/"
+          cp "target/${{ matrix.target }}/release/libuubed_core.a" "dist/$PACKAGE_NAME/"
         fi
         
         # Copy header and documentation

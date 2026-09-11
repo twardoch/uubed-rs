@@ -1,13 +1,16 @@
+# this_file: Cargo.toml
 [workspace]
-members = ["rust"]
+members = ["crates/uubed-core", "crates/uubed-tm", "crates/uubed-python"]
+default-members = ["crates/uubed-core", "crates/uubed-tm"]
 resolver = "2"
 
 [workspace.package]
-version = "1.0.10"
+version = "1.0.12"
 edition = "2021"
+rust-version = "1.88"
 authors = ["Adam Twardoch <adam+github@twardoch.com>"]
 license = "MIT"
-repository = "https://github.com/twardoch/uubed"
+repository = "https://github.com/twardoch/uubed-rs"
 
 [profile.release]
 lto = true

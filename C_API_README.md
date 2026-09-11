@@ -75,7 +75,7 @@ gcc myapp.c $(pkg-config --cflags --libs uubed) -o myapp
 #### Manual Compilation
 
 ```bash
-gcc myapp.c -I./include -L./rust/target/release -luubed_native -o myapp
+gcc myapp.c -I./include -L./target/release -luubed_core -o myapp
 ```
 
 ## API Reference
@@ -236,7 +236,7 @@ const char* error_b = uubed_get_last_error_message();
 make install
 
 // Installs:
-// Library: /usr/local/lib/libuubed_native.*
+// Library: /usr/local/lib/libuubed_core.*
 // Header: /usr/local/include/uubed.h
 // pkg-config: /usr/local/lib/pkgconfig/uubed.pc
 ```

@@ -18,6 +18,6 @@ Version: @VERSION@
 URL: https://github.com/twardoch/uubed-project
 Requires:
 Conflicts:
-Libs: -L${libdir} -luubed_native
+Libs: -L${libdir} -luubed_core
 Libs.private: -lpthread -ldl -lm
 Cflags: -I${includedir}

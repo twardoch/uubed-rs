@@ -374,3 +374,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic Q64, SimHash, Top-k, and Z-order encoders
 - Python bindings via PyO3
 - Core functionality implementation
+## 2026-09-11 — Shared native workspace and translation memory
+
+Consolidated native libraries into uubed-core, uubed-tm and uubed-python. Added
+portable SQLite exact/pair storage, signed int8 search, streaming English TMX
+import, atomic builds, model-space checks and `uubed tm` commands. Both book
+alignment and Abersetz consume the shared Python model runtime. Removed duplicate
+release runners, placeholder native tests and generated site output. Built-module
+imports now use the actual uubed_native extension.
+
+Verification is recorded in ../../research/consolidation: Rust/SIMD, built native
+wheel, Python and consumer suites, real TMX retrieval, copied-book alignment,
+recording-LLM integration and C API execution. No packages were published.
+
+## Unreleased — release tooling
+
+Added consistent publish/build/test scripts; Hatch VCS Python versions and synchronized Cargo workspace releases. Excluded local corpora, databases, credentials, generated versions and agent state from Git/package inputs. Removed conflicting auto-publish jobs and broad site upload workflows.

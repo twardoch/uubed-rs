@@ -182,7 +182,7 @@ def main():
     print()
     
     # Check if we're in the right directory
-    if not Path("rust/Cargo.toml").exists():
+    if not Path("crates/uubed-core/Cargo.toml").exists():
         print("❌ Error: Must run from uubed-rs project root")
         return 1
     
@@ -210,7 +210,7 @@ def main():
     print(f"\n📋 Analysis completed in {elapsed:.2f} seconds")
     print()
     print("🔗 For full benchmark results, run:")
-    print("   cd rust && cargo bench --bench comparative_bench --no-default-features")
+    print("   cargo bench --bench comparative_bench --no-default-features")
     print()
     print("📊 Key Findings:")
     print("   • uubed Q64 provides position-safe encoding with competitive performance")

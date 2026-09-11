@@ -2,7 +2,7 @@ name: Wheels
 
 # Builds the maturin/PyO3 wheels across the supported platform matrix.
 # NOTE: uubed-rs is consumed internally as a native wheel bundled with `uubed`
-# (uubed-py). The crate is intentionally NOT published to crates.io, and these
+# (uubed-py). The core and TM crates are published by publish.sh; these
 # jobs only build/upload artifacts; publishing is handled elsewhere.
 
 on:
@@ -10,7 +10,7 @@ on:
     tags: ["v*"]
   pull_request:
     paths:
-      - "rust/**"
+      - "crates/**"
       - "pyproject.toml"
       - ".github/workflows/wheels.yml"
   workflow_dispatch:
@@ -40,7 +40,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --features python,simd
+          args: --release --out dist --features simd
           manylinux: auto
       - uses: actions/upload-artifact@v4
         with:

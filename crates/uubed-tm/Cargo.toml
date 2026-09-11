@@ -1,0 +1,20 @@
+# this_file: crates/uubed-tm/Cargo.toml
+[package]
+include = ["src/**", "tests/**", "benches/**", "examples/**", "Cargo.toml", "LICENSE", "README.md"]
+name = "uubed-tm"
+description = "Portable translation memory with exact and quantized vector retrieval"
+version.workspace = true
+rust-version.workspace = true
+edition = "2024"
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+[dev-dependencies]
+tempfile = "3"
