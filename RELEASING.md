@@ -76,3 +76,11 @@ copies with `python scripts/sync_release_tools.py /path/to/uubed-project` there.
 Versioning/build references: [Hatch VCS](https://github.com/ofek/hatch-vcs),
 [Cargo workspace metadata](https://doc.rust-lang.org/cargo/reference/workspaces.html),
 [uv publishing](https://docs.astral.sh/uv/guides/package/).
+
+## Failed v1.0.12 attempt
+
+The packaging fix changes tracked files, so rerun `./publish.sh` normally to
+release v1.0.13. The failed v1.0.12 tag is local only; do not resume that tag with
+modified manifests. Source-directory include patterns now select Rust files, and
+the regression test injects ignored local-data files before asking Cargo for the
+actual package list.

@@ -1,6 +1,6 @@
 # this_file: crates/uubed-tm/Cargo.toml
 [package]
-include = ["src/**", "tests/**", "benches/**", "examples/**", "Cargo.toml", "LICENSE", "README.md"]
+include = ["src/**/*.rs", "tests/**/*.rs", "benches/**/*.rs", "examples/**/*.rs", "Cargo.toml", "LICENSE", "README.md"]
 name = "uubed-tm"
 description = "Portable translation memory with exact and quantized vector retrieval"
 version.workspace = true

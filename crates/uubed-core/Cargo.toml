@@ -1,6 +1,6 @@
 # this_file: crates/uubed-core/Cargo.toml
 [package]
-include = ["src/**", "tests/**", "benches/**", "examples/**", "Cargo.toml", "LICENSE", "README.md"]
+include = ["src/**/*.rs", "tests/**/*.rs", "benches/**/*.rs", "examples/**/*.rs", "Cargo.toml", "LICENSE", "README.md"]
 name = "uubed-core"
 version.workspace = true
 rust-version.workspace = true

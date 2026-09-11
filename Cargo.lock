@@ -926,7 +926,7 @@ checksum = "7264e107f553ccae879d21fbea1d6724ac785e8c3bfc762137959b5802826ef3"
 
 [[package]]
 name = "uubed-core"
-version = "1.0.11"
+version = "1.0.13"
 dependencies = [
  "arbitrary",
  "base64",
@@ -950,7 +950,7 @@ dependencies = [
 
 [[package]]
 name = "uubed-python"
-version = "1.0.11"
+version = "1.0.13"
 dependencies = [
  "pyo3",
  "serde_json",
@@ -960,7 +960,7 @@ dependencies = [
 
 [[package]]
 name = "uubed-tm"
-version = "1.0.11"
+version = "1.0.13"
 dependencies = [
  "rusqlite",
  "serde",

@@ -107,7 +107,7 @@ def sync_cargo(root: Path, version: str) -> None:
             if isinstance(dependency, dict) and "path" in dependency:
                 dependency["version"] = version
         path.write_text(tomlkit.dumps(data))
-    run(root, "cargo", "metadata", "--format-version", "1", "--no-deps", capture=True)
+    run(root, "cargo", "metadata", "--format-version", "1", capture=True)
 
 
 def next_tag(root: Path, bump: str) -> str:
@@ -152,7 +152,7 @@ def build(root: Path, out: Path, kind: str, tag: str) -> None:
         )
         run(root, "uvx", "maturin", "sdist", "--out", str(out))
         for crate in ("uubed-core", "uubed-tm"):
-            run(root, "cargo", "package", "-p", crate, "--allow-dirty")
+            run(root, "cargo", "package", "-p", crate, "--locked", "--allow-dirty")
             shutil.copy2(root / "target/package" / f"{crate}-{tag[1:]}.crate", out)
         return
     run(root, "uv", "build", "--no-sources", "--out-dir", str(out))
