@@ -1,0 +1,16 @@
+# this_file: crates/uubed-embed/Cargo.toml
+[package]
+name = "uubed-embed"
+# Internal inference implementation, distributed in the uubed-rs wheel/sdist.
+publish = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Pinned-model FastEmbed inference for Uubed"
+include = ["src/**/*.rs", "Cargo.toml", "LICENSE"]
+
+[dependencies]
+fastembed = { version = "=6.0.3", default-features = false, features = ["ort-download-binaries-rustls-tls"] }
+thiserror = "2"

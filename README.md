@@ -9,11 +9,17 @@ One native implementation for compact byte encoding and translation-memory searc
 | --- | --- |
 | `uubed-core` | Existing tested byte encoders, optional SIMD and C API; no Python dependency. |
 | `uubed-tm` | SQLite source/pair storage, exact matches and signed int8 cosine search. |
-| `uubed-python` | PyO3 bindings for both, published as the `uubed-rs` Python distribution. |
+| `uubed-embed` | Internal FastEmbed 6.0.3 CPU inference over pinned ONNX snapshots. |
+| `uubed-python` | PyO3 bindings, published as the `uubed-rs` Python distribution. |
 
-The extension is imported as `uubed_native`. Model inference, model identity,
-TMX streaming and atomic index publication live in the companion `uubed` Python
-package. There is no second Candle/Qwen model runtime or fixed-1024 database.
+The extension is imported as `uubed_native`. Its `NativeEmbedder` owns a resident
+FastEmbed session and releases the GIL during inference. The companion `uubed`
+package selects/downloads pinned exports, applies prompts and normalizes/truncates
+vectors. It also owns TMX streaming and atomic index publication. Six local profiles
+are supported: Gemma, Jina, MiniLM, Granite, Nomic v2 MoE and Voyage nano.
+The internal inference crate ships in wheels/source distributions; only `uubed-core`
+and `uubed-tm` are published as standalone crates. FastEmbed adds ONNX Runtime to
+native wheels; the byte-encoding/core crates remain independent of it.
 
 ```bash
 cargo test --workspace

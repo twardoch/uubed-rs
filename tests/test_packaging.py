@@ -51,7 +51,7 @@ def test_cargo_packages_exclude_local_data_from_source_directories(
         tmp_path / "crates",
         ignore=shutil.ignore_patterns("target", ".DS_Store", "__pycache__"),
     )
-    for crate in ("uubed-core", "uubed-tm", "uubed-python"):
+    for crate in ("uubed-core", "uubed-tm", "uubed-python", "uubed-embed"):
         for folder in ("src", "tests", "benches", "examples"):
             directory = tmp_path / "crates" / crate / folder
             directory.mkdir(exist_ok=True)

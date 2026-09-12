@@ -4,6 +4,7 @@
 // PyO3 0.22 macro-generated conversions trigger newer Clippy.
 #![allow(clippy::useless_conversion)]
 
+mod embed;
 mod tm;
 
 use pyo3::buffer::PyBuffer;
@@ -607,6 +608,7 @@ fn parallel_topk_encode_native(
 fn uubed_native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Basic encoding functions
     m.add_class::<tm::NativeTm>()?;
+    m.add_class::<embed::NativeEmbedder>()?;
     m.add_function(wrap_pyfunction!(q64_encode_native, m)?)?;
     m.add_function(wrap_pyfunction!(q64_decode_native, m)?)?;
 
