@@ -84,3 +84,36 @@ release v1.0.13. The failed v1.0.12 tag is local only; do not resume that tag wi
 modified manifests. Source-directory include patterns now select Rust files, and
 the regression test injects ignored local-data files before asking Cargo for the
 actual package list.
+
+## Completing the partially published v1.0.13
+
+The v1.0.13 Git tag, host wheel and both Cargo crates are already published.
+PyPI rejected only the source archive, whose metadata declared a missing root
+LICENSE. A separate corrected archive adds that file from the immutable tag;
+all other members are unchanged. The original release directory and manifest
+remain preserved. Do not move the tag or upload the wheel rebuilt for testing.
+
+From the **uubed-project workspace root**, upload only the repaired source archive:
+
+```bash
+uv publish research/releases/v1.0.13-license-recovery/uubed_rs-1.0.13.tar.gz
+```
+
+After that succeeds, continue the remaining repositories:
+
+```bash
+./publish.sh --from uubed-py
+```
+
+The repair SHA-256 is
+`c2d3e6e9856109d2a353c08cbd1f2fe239e1f40e002f0a9451377ccf05a94cb9`.
+The ignored recovery directory contains audit.json with the original and repaired
+hashes, tagged license provenance, and verified registry hashes. Nothing was
+uploaded during repair. The native source fix remains uncommitted for the next
+normal release, v1.0.14. `--resume v1.0.13` would reuse the rejected saved archive
+and requires a clean tagged checkout, so it is not the recovery command here.
+
+Future releases explicitly include the workspace license using
+[Maturin's sdist include setting](https://www.maturin.rs/config.html).
+The artifact gate checks the declared paths required by the
+[Python source-distribution specification](https://packaging.python.org/en/latest/specifications/source-distribution-format/).

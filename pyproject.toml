@@ -54,6 +54,8 @@ dev = [
 ]
 
 [tool.maturin]
+# Workspace license is outside the binding crate's Cargo package file list.
+include = [{ path = "LICENSE", format = "sdist" }]
 # Path to the directory containing Cargo.toml
 manifest-path = "crates/uubed-python/Cargo.toml"
 # Build release builds by default

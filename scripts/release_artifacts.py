@@ -79,17 +79,19 @@ def check_artifact(path: Path, version: str) -> None:
     if path.suffix == ".whl":
         with zipfile.ZipFile(path) as archive:
             names = archive.namelist()
+            files = {m.filename for m in archive.infolist() if not m.is_dir()}
             metadata = [
-                archive.read(n) for n in names if n.endswith(".dist-info/METADATA")
+                (n, archive.read(n)) for n in names if n.endswith(".dist-info/METADATA")
             ]
     else:
         with tarfile.open(path) as archive:
             names = archive.getnames()
+            files = {m.name for m in archive.getmembers() if m.isfile()}
             for member in archive.getmembers():
                 if member.issym() or member.islnk():
                     raise ValueError(f"Unexpected archive link: {member.name}")
                 if member.name.endswith("/PKG-INFO"):
-                    metadata.append(archive.extractfile(member).read())
+                    metadata.append((member.name, archive.extractfile(member).read()))
                 if (
                     path.suffix == ".crate"
                     and member.name.count("/") == 1
@@ -110,9 +112,31 @@ def check_artifact(path: Path, version: str) -> None:
     if path.suffix != ".crate" and not path.name.startswith("site-"):
         if (
             len(metadata) != 1
-            or BytesParser().parsebytes(metadata[0]).get("Version") != version
+            or BytesParser().parsebytes(metadata[0][1]).get("Version") != version
         ):
             raise ValueError(f"Artifact version does not equal {version}: {path.name}")
+        metadata_name, content = metadata[0]
+        headers = BytesParser().parsebytes(content)
+        metadata_version = tuple(
+            map(int, headers.get("Metadata-Version", "0").split("."))
+        )
+        if metadata_version >= (2, 4):
+            base = PurePosixPath(metadata_name).parent
+            if path.suffix == ".whl":
+                base /= "licenses"
+            for license_file in headers.get_all("License-File", []):
+                relative = PurePosixPath(license_file)
+                if (
+                    not license_file
+                    or relative.is_absolute()
+                    or ".." in relative.parts
+                    or "\\" in license_file
+                    or str(base / relative) not in files
+                ):
+                    raise ValueError(
+                        f"License-File {license_file!r} missing or unsafe in {path.name}: "
+                        f"expected {base / relative}"
+                    )
 
 
 def record_artifacts(directory: Path, version: str, commit: str) -> list[Path]:
