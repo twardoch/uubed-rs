@@ -260,7 +260,8 @@ def upload(root: Path, paths: list[Path], kind: str, tag: str, remote: str) -> N
     distributions = [
         str(p) for p in paths if p.suffix == ".whl" or p.name.endswith(".tar.gz")
     ]
-    run(root, "uv", "publish", *distributions)
+    # Trusted Publishing: staged on a draft release, uploaded by pypi-upload.yml
+    run(root, str(root / "scripts" / "pypi-upload.sh"), *distributions)
 
 
 def main() -> None:
