@@ -222,7 +222,7 @@ pub mod q64_simd {
         // Process 16 bytes at a time with NEON
         let (chunks, remainder) = data.as_chunks::<16>();
 
-        for (chunk_idx, chunk) in chunks.iter().enumerate() {
+        for (chunk_idx, chunk) in chunks.enumerate() {
             // Load 16 bytes
             let input = vld1q_u8(chunk.as_ptr());
 
@@ -355,7 +355,7 @@ pub mod topk_simd {
         let chunks = data.chunks_exact(32);
         let remainder = chunks.remainder();
 
-        for (chunk_idx, chunk) in chunks.iter().enumerate() {
+        for (chunk_idx, chunk) in chunks.enumerate() {
             let chunk_data = _mm256_loadu_si256(chunk.as_ptr() as *const __m256i);
 
             // Find max within this chunk
