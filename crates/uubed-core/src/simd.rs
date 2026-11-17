@@ -222,7 +222,7 @@ pub mod q64_simd {
         // Process 16 bytes at a time with NEON
         let (chunks, remainder) = data.as_chunks::<16>();
 
-        for (chunk_idx, chunk) in chunks.enumerate() {
+        for (chunk_idx, chunk) in chunks.iter().enumerate() {
             // Load 16 bytes
             let input = vld1q_u8(chunk.as_ptr());
 
