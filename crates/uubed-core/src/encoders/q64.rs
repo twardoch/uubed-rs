@@ -150,11 +150,10 @@ unsafe fn q64_encode_simd(data: &[u8], output: &mut String) {
     #[cfg(target_arch = "x86_64")]
     use std::arch::x86_64::*;
 
-    let chunks = data.chunks_exact(16);
-    let remainder = chunks.remainder();
+    let (chunks, remainder) = data.as_chunks::<16>();
 
     // Process 16 bytes at a time
-    for (chunk_idx, chunk) in chunks.enumerate() {
+    for (chunk_idx, chunk) in chunks.iter().enumerate() {
         // Load 16 bytes
         let input = _mm_loadu_si128(chunk.as_ptr() as *const __m128i);
 

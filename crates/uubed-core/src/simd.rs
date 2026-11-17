@@ -352,10 +352,9 @@ pub mod topk_simd {
         let mut max_idx = 0usize;
 
         // Process 32 bytes at a time
-        let chunks = data.chunks_exact(32);
-        let remainder = chunks.remainder();
+        let (chunks, remainder) = data.as_chunks::<32>();
 
-        for (chunk_idx, chunk) in chunks.enumerate() {
+        for (chunk_idx, chunk) in chunks.iter().enumerate() {
             let chunk_data = _mm256_loadu_si256(chunk.as_ptr() as *const __m256i);
 
             // Find max within this chunk
@@ -475,7 +474,7 @@ pub mod topk_simd {
         let max_16 = _mm_max_epu8(max_32, _mm_srli_si128(max_32, 2));
         let max_8 = _mm_max_epu8(max_16, _mm_srli_si128(max_16, 1));
 
-        _mm_extract_epi16(max_8, 0) as u8 & 0xFF
+        _mm_extract_epi16(max_8, 0) as u8
     }
 
     /// NEON implementation for finding max indices
